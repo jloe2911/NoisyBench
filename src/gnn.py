@@ -2,123 +2,98 @@ import pandas as pd
 import numpy as np
 import operator
 import random
+from tqdm import tqdm
 
 import torch
-import torch.nn as nn
-from torch.nn import Linear
 import torch.nn.functional as F
+from torch.nn import Parameter
 
 import torch_geometric
-from torch_geometric.data import HeteroData
-from torch_geometric.nn import GCNConv, SAGEConv, GATConv, Linear, to_hetero
+from torch_geometric.nn import GAE, RGCNConv
 from torch_geometric.utils import negative_sampling
 
-class GCN(torch.nn.Module):
-    def __init__(self, hidden_dim, output_dim):
+class RGCNEncoder(torch.nn.Module):
+    def __init__(self, num_nodes, hidden_channels, num_relations):
         super().__init__()
-        self.conv1 = GCNConv(-1, hidden_dim)
-        self.conv2 = GCNConv(-1, output_dim)
+        self.node_emb = Parameter(torch.empty(num_nodes, hidden_channels))
+        self.conv1 = RGCNConv(hidden_channels, hidden_channels, num_relations, num_blocks=5)
+        self.conv2 = RGCNConv(hidden_channels, hidden_channels, num_relations, num_blocks=5)
+        self.reset_parameters()
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index).relu()
-        x = self.conv2(x, edge_index)
+    def reset_parameters(self):
+        torch.nn.init.xavier_uniform_(self.node_emb)
+        self.conv1.reset_parameters()
+        self.conv2.reset_parameters()
+
+    def forward(self, edge_index, edge_type):
+        x = self.node_emb
+        x = self.conv1(x, edge_index, edge_type).relu_()
+        x = F.dropout(x, p=0.2, training=self.training)
+        x = self.conv2(x, edge_index, edge_type)
         return x
     
-class GraphSAGE(torch.nn.Module):
-    def __init__(self, hidden_dim, output_dim):
+class DistMultDecoder(torch.nn.Module):
+    def __init__(self, num_relations, hidden_channels):
         super().__init__()
-        self.conv1 = SAGEConv((-1, -1), hidden_dim)
-        self.conv2 = SAGEConv((-1, -1), output_dim)
+        self.rel_emb = Parameter(torch.empty(num_relations, hidden_channels))
+        self.reset_parameters()
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index).relu()
-        x = self.conv2(x, edge_index)
-        return x
-    
-class GAT(torch.nn.Module):
-    def __init__(self, hidden_dim, output_dim):
-        super().__init__()
-        self.conv1 = GATConv((-1, -1), hidden_dim, add_self_loops=False)
-        self.lin1 = Linear(-1, hidden_dim)
-        self.conv2 = GATConv((-1, -1), output_dim, add_self_loops=False)
-        self.lin2 = Linear(-1, output_dim)
+    def reset_parameters(self):
+        torch.nn.init.xavier_uniform_(self.rel_emb)
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index) + self.lin1(x)
-        x = x.relu()
-        x = self.conv2(x, edge_index) + self.lin2(x)
-        return x
+    def forward(self, z, edge_index, edge_type):
+        z_src, z_dst = z[edge_index[0]], z[edge_index[1]]
+        rel = self.rel_emb[edge_type]
+        return torch.sum(z_src * rel * z_dst, dim=1)
     
 class GNN():
     def __init__(self):
         self.model = None
-        self.epochs = 300
-        self.node_embed_size = 200
-        self.hidden_dim = 200
-        self.output_dim = 200
+        self.hidden_channels = 200
         self.seed = 10
         torch.manual_seed(self.seed)
     
-    def _train(self, GNN_variant, data, nodes, threshold):        
-        pos_edge_index = data.train_pos_edge_index
-        neg_edge_index = negative_sampling(pos_edge_index, num_neg_samples = int(pos_edge_index.size()[1] * threshold))
-        edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=1)
-        num_nodes = len(nodes)
-        
-        self.node_embeds = torch.rand(num_nodes, self.node_embed_size)
-        
-        if GNN_variant == 'GCN':
-            self.model = GCN(self.hidden_dim, self.output_dim)
-        elif GNN_variant == 'GraphSAGE':
-            self.model = GraphSAGE(self.hidden_dim, self.output_dim)
-        elif GNN_variant == 'GAT':
-            self.model = GAT(self.hidden_dim, self.output_dim)
+    def _train(self, data, num_nodes, num_relations):        
+        self.model = GAE(RGCNEncoder(num_nodes, self.hidden_channels, num_relations),
+                         DistMultDecoder(num_relations, self.hidden_channels))
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.005, weight_decay=5e-4)    
-        targets = torch.cat([torch.ones(pos_edge_index.shape[1]), torch.zeros(neg_edge_index.shape[1])])
-        #targets = torch.cat([torch.ones(pos_edge_index.shape[1]), torch.ones(neg_edge_index.shape[1])]) 
-        #in case we want to add negative triples as part of the training triples,
-        #we must label them as positive triples to add noise to the dataset
+        self.model.train()
+        optimizer.zero_grad()
         
-        for i in range(self.epochs+1):
-            self.model.train()
-            optimizer.zero_grad()
-            
-            embeds = self.model(self.node_embeds, edge_index)
-                
-            u = torch.index_select(embeds, 0, edge_index[0, :])
-            v = torch.index_select(embeds, 0, edge_index[1, :])
-            pred = torch.sum(u * v, dim=-1)
-            pred = (pred - pred.min()) / (pred.max() - pred.min())
-            
-            loss = mse_loss(pred, targets)
-            loss.backward()
-            optimizer.step()
-            
-            if i % self.epochs == 0:
-                print(f'Epoch: {i}, Loss: {loss:.4f}')
-                
-    def _eval(self, GNN_variant, data, threshold):
+        z = self.model.encode(data.train_pos_edge_index, data.train_edge_type)
+
+        pos_out = self.model.decode(z, data.train_pos_edge_index, data.train_edge_type)
+
+        neg_edge_index = negative_sampling(data.train_pos_edge_index, num_neg_samples = data.train_pos_edge_index.size(1))
+        neg_out = self.model.decode(z, neg_edge_index, data.train_edge_type)
+
+        out = torch.cat([pos_out, neg_out])
+        gt = torch.cat([torch.ones_like(pos_out), torch.zeros_like(neg_out)])
+        cross_entropy_loss = F.binary_cross_entropy_with_logits(out, gt)
+        reg_loss = z.pow(2).mean() + self.model.decoder.rel_emb.pow(2).mean()
+        loss = cross_entropy_loss + 1e-2 * reg_loss
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.)
+        optimizer.step()
+
+        return float(loss)
+
+    def _eval(self, data):
         with torch.no_grad():
             self.model.eval()
 
-            pos_edge_index = data.test_pos_edge_index
-            neg_edge_index = negative_sampling(pos_edge_index, num_neg_samples = int(pos_edge_index.size()[1] * threshold))
-            edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=1)
+            output = self.model.encode(data.test_pos_edge_index, data.test_edge_type)
 
-            output = self.model(self.node_embeds, edge_index)
-            
             hits1, hits10 = eval_hits(data=data,
                                       tail_pred=1,
                                       output=output,
-                                      max_num=100)
-            
-            print(f'hits@1: {hits1:.3f}, hits@10: {hits10:.3f}')
+                                      max_num=data.test_pos_edge_index.size(1))
+
+            return hits1, hits10
             
 ###HELPER FUNCIONS### 
-
-def mse_loss(pred, target):
-    return (pred - target.to(pred.dtype)).pow(2).mean()
 
 def eval_hits(data, tail_pred, output, max_num):    
     top1 = 0
