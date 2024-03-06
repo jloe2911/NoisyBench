@@ -13,13 +13,13 @@ def get_queries():
      #?personA rdf:type owl:NamedIndividual .
      #?personB rdf:type owl:NamedIndividual .
      
-     { ?personA fo:hasFather ?personB .
-       ?personB fo:hasFather ?personA . }
+     { ?personA fo:isFatherOf ?personB .
+       ?personB fo:isFatherOf ?personA . }
        
      UNION
      
-    { ?personA fo:hasMother ?personB .
-      ?personB fo:hasMother ?personA . }
+    { ?personA fo:isMotherOf ?personB .
+      ?personB fo:isMotherOf ?personA . }
      
      FILTER (?personA != ?personB)
     }
@@ -34,13 +34,13 @@ def get_queries():
      #?personA rdf:type owl:NamedIndividual .
      #?personB rdf:type owl:NamedIndividual .
      
-     { ?personA fo:hasSon ?personB .
-       ?personB fo:hasSon ?personA . }
+     { ?personA fo:isSonOf ?personB .
+       ?personB fo:isSonOf ?personA . }
        
      UNION
      
-    { ?personA fo:hasDaughter ?personB .
-      ?personB fo:hasDaughter ?personA . }
+    { ?personA fo:isDaughterOf ?personB .
+      ?personB fo:isDaughterOf ?personA . }
      
      FILTER (?personA != ?personB)
     }
@@ -55,23 +55,88 @@ def get_queries():
      #?personA rdf:type owl:NamedIndividual .
      #?personB rdf:type owl:NamedIndividual .
 
-     { ?personA fo:hasSister ?personB }
+     { ?personA fo:isSisterOf ?personB .
+       ?personA fo:isDaughterOf ?personB .
+       ?personA fo:isMotherOf ?personB . }
+
      UNION
-     { ?personA fo:hasBrother ?personB } .
      
-     { ?personA fo:hasDaughter ?personB }
-     UNION
-     { ?personA fo:hasSon ?personB } .
-     
-     { ?personA fo:hasMother ?personB }
-     UNION
-     { ?personA fo:hasFather ?personB } .
+     { ?personA fo:isBrotherOf ?personB .
+       ?personA fo:isSonOf ?personB .
+       ?personA fo:isFatherOf ?personB . }
 
      FILTER (?personA != ?personB)
     }
     """
     
-    return query1, query2, query3
+    query4 = """
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX fo: <http://www.co-ode.org/roberts/family-tree.owl#>
+    SELECT (COUNT(*) as ?contradictions) WHERE {
+     #?personA rdf:type owl:NamedIndividual .
+     #?personB rdf:type owl:NamedIndividual .
+
+     { ?personA fo:isFemalePartnerIn ?personB .
+       ?personB fo:isFemalePartnerIn ?personC . }
+
+     UNION
+
+     { ?personA fo:isMalePartnerIn ?personB .
+       ?personB fo:isMalePartnerIn ?personC . }
+
+     FILTER (?personA != ?personB && ?personB != ?personC) 
+    }
+    """
+    
+    query5 = """
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX fo: <http://www.co-ode.org/roberts/family-tree.owl#>
+    SELECT (COUNT(*) as ?contradictions) WHERE {
+     #?personA rdf:type owl:NamedIndividual .
+     #?personB rdf:type owl:NamedIndividual .
+
+     { ?personA fo:isMotherOf ?personB ;
+                fo:hasBirthYear ?personABirthDate . 
+       ?personB fo:hasBirthYear ?personBBirthDate . }        
+
+     UNION
+
+     { ?personA fo:isFatherOf ?personB ;
+                fo:hasBirthYear ?personABirthDate . 
+       ?personB fo:hasBirthYear ?personBBirthDate . }        
+
+     FILTER (?personA != ?personB && ?personABirthDate < ?personBBirthDate) 
+    }
+    """
+    
+    query6 = """
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX fo: <http://www.co-ode.org/roberts/family-tree.owl#>
+    SELECT (COUNT(*) as ?contradictions) WHERE {
+     #?personA rdf:type owl:NamedIndividual .
+     #?personB rdf:type owl:NamedIndividual .
+
+     { ?personA fo:isDaughterOf ?personB ;
+                fo:hasBirthYear ?personABirthDate . 
+       ?personB fo:hasBirthYear ?personBBirthDate . }        
+
+     UNION
+
+     { ?personA fo:isSonOf ?personB ;
+                fo:hasBirthYear ?personABirthDate . 
+       ?personB fo:hasBirthYear ?personBBirthDate . }        
+
+     FILTER (?personA != ?personB && ?personABirthDate > ?personBBirthDate) 
+    }
+    """
+    
+    return query1, query2, query3, query4, query5, query6
 
 def add_links(g, node1_lst, node2_lst, edge_type_uri):
   
