@@ -86,7 +86,7 @@ class GNN():
 
             output = self.model.encode(data.test_pos_edge_index, data.test_edge_type)
 
-            hits1, hits10 = eval_hits(data=data,
+            hits1, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
                                       tail_pred=1,
                                       output=output,
                                       max_num=data.test_pos_edge_index.size(1))
@@ -95,19 +95,19 @@ class GNN():
             
 ###HELPER FUNCIONS### 
 
-def eval_hits(data, tail_pred, output, max_num):    
+def eval_hits(edge_index, tail_pred, output, max_num):    
     top1 = 0
     top10 = 0
-    n = data.test_pos_edge_index.size(1)
+    n = edge_index.size(1)
 
     for idx in range(n):
         if tail_pred == 1:
-            x = torch.index_select(output, 0, data.test_pos_edge_index[0, idx])
+            x = torch.index_select(output, 0, edge_index[0, idx])
         else:
-            x = torch.index_select(output, 0, data.test_pos_edge_index[1, idx])
+            x = torch.index_select(output, 0, edge_index[1, idx])
         
         candidates, candidates_embeds = sample_negative_edges_idx(idx=idx,
-                                                                  data=data,
+                                                                  edge_index=edge_index,
                                                                   tail_pred=tail_pred,
                                                                   output=output,
                                                                   max_num=max_num)
@@ -119,7 +119,7 @@ def eval_hits(data, tail_pred, output, max_num):
         sorted_keys = list(sorted_dict.keys())
 
         ranks_dict = {sorted_keys[i]: i for i in range(0, len(sorted_keys))}
-        rank = ranks_dict[data.test_pos_edge_index[1, idx].item()]
+        rank = ranks_dict[edge_index[1, idx].item()]
         
         if rank <= 1:
             top1 += 1
@@ -127,32 +127,32 @@ def eval_hits(data, tail_pred, output, max_num):
             top10 += 1
     return top1/n, top10/n
 
-def sample_negative_edges_idx(idx, data, tail_pred, output, max_num):
+def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
     num_neg_samples = 0
     candidates = []
-    nodes = list(range(data.test_pos_edge_index.size(1)))
+    nodes = list(range(edge_index.size(1)))
     random.shuffle(nodes)
 
     while num_neg_samples < max_num:    
         if tail_pred == 1:
             t = nodes[num_neg_samples]
-            h = data.test_pos_edge_index[0, idx].item()
-            if h not in data.test_pos_edge_index[0] or t not in data.test_pos_edge_index[1]:
+            h = edge_index[0, idx].item()
+            if h not in edge_index[0] or t not in edge_index[1]:
                 candidates.append(t)
         else: 
-            t = data.test_pos_edge_index[1, idx].item()
+            t = edge_index[1, idx].item()
             h = nodes[num_neg_samples]
-            if h not in data.test_pos_edge_index[0] or t not in data.test_pos_edge_index[1]:
+            if h not in edge_index[0] or t not in edge_index[1]:
                 candidates.append(h)
         num_neg_samples += 1
     candidates_embeds = torch.index_select(output, 0, torch.tensor(candidates))
 
     if tail_pred == 1:
-        true_tail = data.test_pos_edge_index[1, idx]
+        true_tail = edge_index[1, idx]
         candidates.append(true_tail.item())
         candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_tail)])
     else:
-        true_head = data.test_pos_edge_index[0, idx]
+        true_head = edge_index[0, idx]
         candidates.append(true_head.item())
         candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_head)])
     return candidates, candidates_embeds

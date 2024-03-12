@@ -136,7 +136,21 @@ def get_queries():
     }
     """
     
-    return query1, query2, query3, query4, query5, query6
+    query7 = """
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX fo: <http://www.co-ode.org/roberts/family-tree.owl#>
+    SELECT (COUNT(*) as ?contradictions) WHERE {
+     #?personA rdf:type owl:NamedIndividual .
+     #?personB rdf:type owl:NamedIndividual .
+     ?personA ?p1 ?personB .
+     ?personA ?p2 ?personB .
+     FILTER (?p1 in (fo:isSisterOf, fo:isDaughterOf, fo:isMotherOf) && ?p2 in (fo:isFatherOf, fo:isBrotherOf, fo:isSonOf))
+     FILTER (?personA != ?personB)
+    }
+    """
+    
+    return query1, query2, query3, query4, query5, query6, query7
 
 def add_links(g, node1_lst, node2_lst, edge_type_uri):
   
