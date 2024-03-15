@@ -119,7 +119,10 @@ def eval_hits(edge_index, tail_pred, output, max_num):
         sorted_keys = list(sorted_dict.keys())
 
         ranks_dict = {sorted_keys[i]: i for i in range(0, len(sorted_keys))}
-        rank = ranks_dict[edge_index[1, idx].item()]
+        if tail_pred == 1:
+            rank = ranks_dict[edge_index[1, idx].item()]
+        else:
+            rank = ranks_dict[edge_index[0, idx].item()]
         
         if rank <= 1:
             top1 += 1
@@ -130,7 +133,7 @@ def eval_hits(edge_index, tail_pred, output, max_num):
 def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
     num_neg_samples = 0
     candidates = []
-    nodes = list(range(edge_index.size(1)))
+    nodes = list(range(edge_index.max()))
     random.shuffle(nodes)
 
     while num_neg_samples < max_num:    
