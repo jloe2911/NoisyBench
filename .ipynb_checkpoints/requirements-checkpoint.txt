@@ -1,0 +1,4 @@
+torch
+rdflib
+jupyter
+ipykernel

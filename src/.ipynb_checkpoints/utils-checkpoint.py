@@ -6,6 +6,8 @@ from collections import defaultdict
 import torch
 from torch_geometric.data import HeteroData
 import rdflib
+import mowl
+mowl.init_jvm('10g')
 from org.semanticweb.owlapi.model.parameters import Imports
 from java.util import HashSet
 from mowl.owlapi import OWLAPIAdapter
@@ -52,10 +54,15 @@ def copy_graph(g):
     
     return new_g
 
-def split_ontology(file_name, format_, train_ratio, test_ratio):
+def split_ontology(file_name, format_, train_ratio, test_ratio, add_noise):
     g = rdflib.Graph()
-    g.parse(f'datasets/{file_name}.owl', format=format_)  
-    print(f'Triplets found: %d' % len(g))
+    g.parse(f'datasets/family.owl')  
+    print(f'Triplets found in family.owl: %d' % len(g))
+    
+    if add_noise:   
+        noisy_g = rdflib.Graph()
+        noisy_g.parse(f'datasets/{file_name}.owl', format=format_)  
+        print(f'Triplets found in {file_name}.owl: %d' % len(noisy_g))
 
     triples = list(g.triples((None, None, None))) 
     random.shuffle(triples) 
@@ -79,6 +86,11 @@ def split_ontology(file_name, format_, train_ratio, test_ratio):
         
     for triple in valid_triples:
         valid_graph.add(triple)
+    
+    # Add noisy triples to train_graph
+    if add_noise:
+        for triple in noisy_g:
+            train_graph.add(triple)
 
     print(f'Train Triplets found: %d' % len(train_graph))
     train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
@@ -118,27 +130,3 @@ def preprocess_ontology_el(ontology):
     new_ontology = owl_manager.createOntology(new_tbox_axioms)
     new_ontology.addAxioms(abox_axioms)
     return new_ontology
-
-def get_abox_data(dataset, dataset_type):
-    if dataset_type == "train":
-        ontology = dataset.ontology
-    elif dataset_type == "valid":
-        ontology = dataset.validation
-    elif dataset_type == "test":
-        ontology = dataset.testing
-    abox = []
-    for cls in dataset.classes:
-        abox.extend(list(ontology.getClassAssertionAxioms(cls)))
-    nb_individuals = len(dataset.individuals)
-    nb_classes = len(dataset.classes)
-    owl_indiv_to_id = dataset.individuals.to_index_dict()
-    owl_class_to_id = dataset.classes.to_index_dict()
-    labels = np.zeros((nb_individuals, nb_classes), dtype=np.int32)
-    for axiom in abox:
-        cls = axiom.getClassExpression()
-        indiv = axiom.getIndividual()
-        cls_id = owl_class_to_id[cls]
-        indiv_id = owl_indiv_to_id[ind]
-        labels[indiv_id, cls_id] = 1
-    idxs = np.arange(nb_individuals)
-    return torch.tensor(idxs), torch.FloatTensor(labels)
