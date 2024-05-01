@@ -6,6 +6,7 @@ from collections import defaultdict
 import torch
 from torch_geometric.data import HeteroData
 import rdflib
+from rdflib import URIRef
 import mowl
 mowl.init_jvm('10g')
 from org.semanticweb.owlapi.model.parameters import Imports
@@ -54,52 +55,68 @@ def copy_graph(g):
     
     return new_g
 
-def split_ontology(file_name, format_, train_ratio, test_ratio, add_noise):
+def split_ontology(file_name, format_, train_ratio, add_noise):
     g = rdflib.Graph()
     g.parse(f'datasets/family.owl')  
-    print(f'Triplets found in family.owl: %d' % len(g))
-    
-    if add_noise:   
-        noisy_g = rdflib.Graph()
-        noisy_g.parse(f'datasets/{file_name}.owl', format=format_)  
-        print(f'Triplets found in {file_name}.owl: %d' % len(noisy_g))
-
     triples = list(g.triples((None, None, None))) 
-    random.shuffle(triples) 
+    print(f'Triplets found in family.owl: %d' % len(g))
+
+    g_asserted = rdflib.Graph()
+    g_asserted.parse('datasets/family_asserted.owl')
+    asserted_triples = list(g_asserted.triples((None, None, None))) 
+
+    if add_noise:   
+        g_noise = rdflib.Graph()
+        g_noise.parse(f'datasets/{file_name}.owl', format=format_)  
+        print(f'Triplets found in {file_name}.owl: %d' % len(g_noise))
 
     train_index = int(train_ratio * len(triples))
-    test_index = int((train_ratio + test_ratio) * len(triples))
-
     train_triples = triples[:train_index]
-    test_triples = triples[train_index:test_index]
-    valid_triples = triples[test_index:]
+    valid_triples = triples[train_index:]
+    test_triples = set(asserted_triples) - set(train_triples) -set(valid_triples)
 
     train_graph = rdflib.Graph()
-    test_graph = rdflib.Graph()
     valid_graph = rdflib.Graph()
+    test_graph = rdflib.Graph()
+    test_membership_graph = rdflib.Graph()
+    test_subsumption_graph = rdflib.Graph()
+    test_link_prediction_graph = rdflib.Graph()
 
     for triple in train_triples:
         train_graph.add(triple)
 
-    for triple in test_triples:
-        test_graph.add(triple)
-        
     for triple in valid_triples:
         valid_graph.add(triple)
-    
+
+    # Tasks: membership, subsumption, link prediction
+    for triple in test_triples:
+        test_graph.add(triple)
+        if triple[1] == URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'):
+            test_membership_graph.add(triple)
+        elif triple[1] == URIRef('http://www.w3.org/2000/01/rdf-schema#subClassOf'):
+            test_subsumption_graph.add(triple)
+        else:
+            test_link_prediction_graph.add(triple)
+
     # Add noisy triples to train_graph
     if add_noise:
-        for triple in noisy_g:
+        for triple in g_noise:
             train_graph.add(triple)
 
     print(f'Train Triplets found: %d' % len(train_graph))
     train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
-    print(f'Test Triplets found: %d' % len(test_graph))
-    test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
     print(f'Valid Triplets found: %d' % len(valid_graph))
     valid_graph.serialize(destination=f"datasets/bin/{file_name}_val.owl")
+    print(f'Test Triplets found: %d' % len(test_graph))
+    test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
+    print(f'Test Triplets (Membership) found: %d' % len(test_membership_graph))
+    test_membership_graph.serialize(destination=f"datasets/bin/{file_name}_membership_test.owl")
+    print(f'Test Triplets (Subsumption) found: %d' % len(test_subsumption_graph))
+    test_subsumption_graph.serialize(destination=f"datasets/bin/{file_name}_subsumption_test.owl")
+    print(f'Test Triplets (Link Prediction) found: %d' % len(test_link_prediction_graph))
+    test_link_prediction_graph.serialize(destination=f"datasets/bin/{file_name}_link_prediction_test.owl")
     
-    return train_graph, test_graph, valid_graph
+    return train_graph, valid_graph, test_graph, test_membership_graph, test_subsumption_graph, test_link_prediction_graph
 
 def preprocess_ontology_el(ontology):
     tbox_axioms = ontology.getTBoxAxioms(Imports.fromBoolean(True))

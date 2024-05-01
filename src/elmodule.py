@@ -192,9 +192,6 @@ class ElModel(EmbeddingELModel):
             predictions = self.module.abox_forward(aux)
             max_ = torch.max(predictions)
             predictions = predictions - max_
-
-        aggregator = torch.mean
-        predictions = aggregator(predictions, dim=1)
         predictions = predictions.reshape(-1, len(tail_ids))
 
         return predictions
@@ -213,18 +210,16 @@ class ElModel(EmbeddingELModel):
             ds = torch.nonzero(labels).squeeze() #shape
             individuals = ds[:, 0] 
             classes = ds[:, 1]
-            eval_dl = FastTensorDataLoader(individuals, classes, batch_size=self.test_batch_size, shuffle=False)
+            eval_dl = FastTensorDataLoader(individuals, classes, batch_size=self.test_batch_size, shuffle=False)            
 
         mean_rank = 0
         ranks = dict()
         rank_vals = []
 
         mrr = 0
-        hits_at_1 = 0
-        hits_at_3 = 0
+        hits_at_5 = 0
         hits_at_10 = 0
-        hits_at_100 = 0
-
+        
         with torch.no_grad():
             for head_idxs, tail_idxs in eval_dl:
                 predictions = self.predict(head_idxs, tail_idxs, mode=mode)
@@ -240,22 +235,16 @@ class ElModel(EmbeddingELModel):
                     ranks[rank] += 1
 
                     mrr += 1/(rank+1)
-                    if rank == 0:
-                        hits_at_1 += 1
-                    if rank < 3:
-                        hits_at_3 += 1
-                    if rank < 10:
+                    if rank <= 5:
+                        hits_at_5 += 1
+                    if rank <= 10:
                         hits_at_10 += 1
-                    if rank < 100:
-                        hits_at_100 += 1
-
+                        
             mean_rank /= eval_dl.dataset_len
             mrr /= eval_dl.dataset_len
-            hits_at_1 /= eval_dl.dataset_len
-            hits_at_3 /= eval_dl.dataset_len
+            hits_at_5 /= eval_dl.dataset_len
             hits_at_10 /= eval_dl.dataset_len
-            hits_at_100 /= eval_dl.dataset_len
             median_rank = np.median(rank_vals)
 
             print(f'Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, MRR: {mrr:.3f}')
-            print(f'Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')
+            print(f'Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')

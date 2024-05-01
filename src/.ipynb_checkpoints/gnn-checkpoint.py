@@ -86,17 +86,18 @@ class GNN():
 
             output = self.model.encode(data.test_pos_edge_index, data.test_edge_type)
 
-            hits1, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
-                                      tail_pred=1,
-                                      output=output,
-                                      max_num=data.test_pos_edge_index.size(1))
+            mrr, hits5, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
+                                           tail_pred=1,
+                                           output=output,
+                                           max_num=data.test_pos_edge_index.size(1))
 
-            return hits1, hits10
+            return mrr, hits5, hits10
             
 ###HELPER FUNCIONS### 
 
 def eval_hits(edge_index, tail_pred, output, max_num):    
-    top1 = 0
+    mrr = 0
+    top5 = 0
     top10 = 0
     n = edge_index.size(1)
 
@@ -124,11 +125,12 @@ def eval_hits(edge_index, tail_pred, output, max_num):
         else:
             rank = ranks_dict[edge_index[0, idx].item()]
         
-        if rank <= 1:
-            top1 += 1
+        mrr += 1/(rank+1)
+        if rank <= 5:
+            top5 += 1
         if rank <= 10:
             top10 += 1
-    return top1/n, top10/n
+    return mrr/n, top5/n, top10/n
 
 def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
     num_neg_samples = 0
