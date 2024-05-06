@@ -47,19 +47,17 @@ class DistMultDecoder(torch.nn.Module):
         return torch.sum(z_src * rel * z_dst, dim=1)
     
 class GNN():
-    def __init__(self):
-        self.model = None
+    def __init__(self, num_nodes, num_relations):
         self.hidden_channels = 200
+        self.model = GAE(RGCNEncoder(num_nodes, self.hidden_channels, num_relations),
+                         DistMultDecoder(num_relations, self.hidden_channels))
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
         self.seed = 10
         torch.manual_seed(self.seed)
     
-    def _train(self, data, num_nodes, num_relations):        
-        self.model = GAE(RGCNEncoder(num_nodes, self.hidden_channels, num_relations),
-                         DistMultDecoder(num_relations, self.hidden_channels))
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
-
+    def _train(self, data):        
         self.model.train()
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         
         z = self.model.encode(data.train_pos_edge_index, data.train_edge_type)
 
@@ -76,7 +74,7 @@ class GNN():
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.)
-        optimizer.step()
+        self.optimizer.step()
 
         return float(loss)
 
