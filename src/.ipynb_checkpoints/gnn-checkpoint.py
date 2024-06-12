@@ -87,7 +87,7 @@ class GNN():
             mrr, hits5, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
                                            tail_pred=1,
                                            output=output,
-                                           max_num=data.test_pos_edge_index.size(1))
+                                           max_num=100)
 
             return mrr, hits5, hits10
             

@@ -95,10 +95,8 @@ class ElModel(EmbeddingELModel):
                                                                                             
     def _train(self):
         abox_ds_train = self.get_abox_data("train")
-        abox_ds_valid = self.get_abox_data("valid")
 
         abox_dl_train = FastTensorDataLoader(*abox_ds_train, batch_size=self.batch_size, shuffle=True)
-        abox_dl_valid = FastTensorDataLoader(*abox_ds_valid, batch_size=self.batch_size, shuffle=False)
 
         el_dls = {gci_name: DataLoader(ds, batch_size=self.batch_size, shuffle=True) for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
         el_dls_sizes = {gci_name: len(ds) for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
