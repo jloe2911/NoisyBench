@@ -62,16 +62,16 @@ def split_ontology(dataset_name, file_name, format_, train_ratio, add_noise):
     print(f'Triplets found in {dataset_name}.owl: %d' % len(g))
 
     g_subsumption = rdflib.Graph()
-    g_subsumption.parse(f'datasets/{dataset_name}_classification.owl')
+    g_subsumption.parse(f'datasets/test/{dataset_name}_classification.owl')
     subsumption_triples = list(g_subsumption.triples((None, URIRef('http://www.w3.org/2000/01/rdf-schema#subClassOf'), None))) 
     
     g_membership = rdflib.Graph()
-    g_membership.parse(f'datasets/{dataset_name}_realisation.owl')
+    g_membership.parse(f'datasets/test/{dataset_name}_realisation.owl')
     membership_triples = list(g_membership.triples((None, RDF.type, None))) 
 
     if add_noise:   
         g_noise = rdflib.Graph()
-        g_noise.parse(f'datasets/{file_name}.owl', format=format_)  
+        g_noise.parse(f'datasets/noise/{file_name}.owl', format=format_)  
         print(f'Triplets found in {file_name}.owl: %d' % len(g_noise))
 
     train_index = int(train_ratio * len(triples))
@@ -147,85 +147,91 @@ def preprocess_ontology_el(ontology):
     new_ontology.addAxioms(abox_axioms)
     return new_ontology
 
-def get_experimets():
+def get_experimets(dataset_name):
     
-    experiments1 = [{'dataset_name' : 'family',
-                     'file_name' : 'family',
-                     'format_' : None,
-                     'add_noise': False},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_gnn_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_gnn_1000',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_random_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_random_1000',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_disjoint_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'family',
-                     'file_name' : 'family_noisy_disjoint_1000',
-                     'format_' : None,
-                     'add_noise': True}]
+    if dataset_name == 'family': 
     
-    experiments2 = [{'dataset_name' : 'pizza',
-                     'file_name' : 'pizza',
-                     'format_' : None,
-                     'add_noise': False},
-                    {'dataset_name' : 'pizza',
-                     'file_name' : 'pizza_noisy_random_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'pizza',
-                     'file_name' : 'pizza_noisy_random_1000',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'pizza',
-                     'file_name' : 'pizza_noisy_disjoint_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'pizza',
-                     'file_name' : 'pizza_noisy_disjoint_1000',
-                     'format_' : None,
-                     'add_noise': True}]
+        experiments = [{'dataset_name' : 'family',
+                        'file_name' : 'family',
+                        'format_' : None,
+                        'add_noise': False},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_gnn_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_gnn_1000',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_random_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_random_1000',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_disjoint_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'family',
+                        'file_name' : 'family_noisy_disjoint_1000',
+                        'format_' : None,
+                        'add_noise': True}]
+ 
+    elif dataset_name == 'pizza':
     
-    experiments3 = [{'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1',
-                     'format_' : None,
-                     'add_noise': False},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_gnn_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_gnn_1000',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_random_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_random_1000',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_disjoint_100',
-                     'format_' : None,
-                     'add_noise': True},
-                    {'dataset_name' : 'OWL2DL-1',
-                     'file_name' : 'OWL2DL-1_noisy_disjoint_1000',
-                     'format_' : None,
-                     'add_noise': True}]
+        experiments = [{'dataset_name' : 'pizza',
+                        'file_name' : 'pizza',
+                        'format_' : None,
+                        'add_noise': False},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_noisy_random_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_noisy_random_1000',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_noisy_disjoint_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_noisy_disjoint_1000',
+                        'format_' : None,
+                        'add_noise': True}]
+        
+    elif dataset_name == 'OWL2DL-1':
     
-    return experiments1, experiments2, experiments3
+        experiments = [{'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1',
+                        'format_' : None,
+                        'add_noise': False},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_1000',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_random_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_random_1000',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_100',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_1000',
+                        'format_' : None,
+                        'add_noise': True}]
+    
+    return experiments

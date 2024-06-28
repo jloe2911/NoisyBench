@@ -244,5 +244,4 @@ class ElModel(EmbeddingELModel):
             hits_at_10 /= eval_dl.dataset_len
             median_rank = np.median(rank_vals)
 
-            print(f'Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, MRR: {mrr:.3f}')
-            print(f'Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+            print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')

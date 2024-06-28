@@ -47,14 +47,15 @@ class DistMultDecoder(torch.nn.Module):
         return torch.sum(z_src * rel * z_dst, dim=1)
     
 class GNN():
-    def __init__(self, num_nodes, num_relations):
+    def __init__(self, device, num_nodes, num_relations):
+        self.device = device
         self.hidden_channels = 200
         self.model = GAE(RGCNEncoder(num_nodes, self.hidden_channels, num_relations),
-                         DistMultDecoder(num_relations, self.hidden_channels))
+                         DistMultDecoder(num_relations, self.hidden_channels)).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
         self.seed = 10
         torch.manual_seed(self.seed)
-    
+
     def _train(self, data):        
         self.model.train()
         self.optimizer.zero_grad()
@@ -84,17 +85,20 @@ class GNN():
 
             output = self.model.encode(data.test_pos_edge_index, data.test_edge_type)
 
-            mrr, hits5, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
-                                           tail_pred=1,
-                                           output=output,
-                                           max_num=100)
-
-            return mrr, hits5, hits10
+            mrr, mean_rank, median_rank, hits5, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
+                                                                   tail_pred=1,
+                                                                   output=output,
+                                                                   max_num=100,
+                                                                   device=self.device)
+                        
+            return mrr, mean_rank, median_rank, hits5, hits10
             
 ###HELPER FUNCIONS### 
 
-def eval_hits(edge_index, tail_pred, output, max_num):    
+def eval_hits(edge_index, tail_pred, output, max_num, device):    
     mrr = 0
+    mean_rank = 0
+    rank_vals = []
     top5 = 0
     top10 = 0
     n = edge_index.size(1)
@@ -109,7 +113,8 @@ def eval_hits(edge_index, tail_pred, output, max_num):
                                                                   edge_index=edge_index,
                                                                   tail_pred=tail_pred,
                                                                   output=output,
-                                                                  max_num=max_num)
+                                                                  max_num=max_num,
+                                                                  device=device)
 
         distances = torch.cdist(candidates_embeds, x, p=2)
         dist_dict = {cand: dist for cand, dist in zip(candidates, distances)} 
@@ -124,13 +129,15 @@ def eval_hits(edge_index, tail_pred, output, max_num):
             rank = ranks_dict[edge_index[0, idx].item()]
         
         mrr += 1/(rank+1)
+        mean_rank += rank
+        rank_vals.append(rank)
         if rank <= 5:
             top5 += 1
         if rank <= 10:
             top10 += 1
-    return mrr/n, top5/n, top10/n
+    return mrr/n, mean_rank/n,  np.median(rank_vals), top5/n, top10/n
 
-def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
+def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num, device):
     num_neg_samples = 0
     candidates = []
     nodes = list(range(edge_index.max()))
@@ -148,7 +155,7 @@ def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
             if h not in edge_index[0] or t not in edge_index[1]:
                 candidates.append(h)
         num_neg_samples += 1
-    candidates_embeds = torch.index_select(output, 0, torch.tensor(candidates))
+    candidates_embeds = torch.index_select(output, 0, torch.tensor(candidates).to(device))
 
     if tail_pred == 1:
         true_tail = edge_index[1, idx]
@@ -158,4 +165,4 @@ def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num):
         true_head = edge_index[0, idx]
         candidates.append(true_head.item())
         candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_head)])
-    return candidates, candidates_embeds
+    return candidates, candidates_embeds.to(device)
