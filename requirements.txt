@@ -1,4 +1,10 @@
+pandas
+numpy
 torch
+torch_geometric
 rdflib
+owlready2
+scikit-learn
+mowl-borg
 jupyter
 ipykernel
