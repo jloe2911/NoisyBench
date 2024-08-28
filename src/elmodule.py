@@ -215,8 +215,10 @@ class ElModel(EmbeddingELModel):
         rank_vals = []
 
         mrr = 0
-        hits_at_5 = 0
+        hits_at_1 = 0
+        hits_at_3 = 0
         hits_at_10 = 0
+        hits_at_100 = 0
         
         with torch.no_grad():
             for head_idxs, tail_idxs in eval_dl:
@@ -233,15 +235,21 @@ class ElModel(EmbeddingELModel):
                     ranks[rank] += 1
 
                     mrr += 1/(rank+1)
-                    if rank <= 5:
-                        hits_at_5 += 1
+                    if rank <= 1:
+                        hits_at_1 += 1
+                    if rank <= 3:
+                        hits_at_3 += 1
                     if rank <= 10:
                         hits_at_10 += 1
+                    if rank <= 100:
+                        hits_at_100 += 1
                         
             mean_rank /= eval_dl.dataset_len
             mrr /= eval_dl.dataset_len
-            hits_at_5 /= eval_dl.dataset_len
+            hits_at_1 /= eval_dl.dataset_len
+            hits_at_3 /= eval_dl.dataset_len
             hits_at_10 /= eval_dl.dataset_len
+            hits_at_100 /= eval_dl.dataset_len
             median_rank = np.median(rank_vals)
 
-            print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+            print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')

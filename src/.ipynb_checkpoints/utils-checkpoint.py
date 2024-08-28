@@ -12,6 +12,7 @@ mowl.init_jvm('10g')
 from org.semanticweb.owlapi.model.parameters import Imports
 from java.util import HashSet
 from mowl.owlapi import OWLAPIAdapter
+random.seed(42)
 
 def get_data(g, nodes_dict, relations_dict):
     edge_data = defaultdict(list)
@@ -55,10 +56,16 @@ def copy_graph(g):
     
     return new_g
 
-def split_ontology(dataset_name, file_name, format_, train_ratio, add_noise):
+def check_entities_in_train(train_triples, target_triples):
+    train_entities = {subj for subj, _, _ in train_triples} | {obj for _, _, obj in train_triples}
+    target_triples = [triple for triple in target_triples if (triple[0] in train_entities) and (triple[2] in train_entities)]
+    return target_triples
+
+def split_ontology(dataset_name, file_name, format_, train_ratio):
     g = rdflib.Graph()
     g.parse(f'datasets/{dataset_name}.owl')  
-    triples = list(g.triples((None, None, None))) 
+    triples = list(g)  
+    random.shuffle(triples)
     print(f'Triplets found in {dataset_name}.owl: %d' % len(g))
 
     g_subsumption = rdflib.Graph()
@@ -69,16 +76,15 @@ def split_ontology(dataset_name, file_name, format_, train_ratio, add_noise):
     g_membership.parse(f'datasets/test/{dataset_name}_realisation.owl')
     membership_triples = list(g_membership.triples((None, RDF.type, None))) 
 
-    if add_noise:   
-        g_noise = rdflib.Graph()
-        g_noise.parse(f'datasets/noise/{file_name}.owl', format=format_)  
-        print(f'Triplets found in {file_name}.owl: %d' % len(g_noise))
-
     train_index = int(train_ratio * len(triples))
     train_triples = triples[:train_index]
     valid_triples = triples[train_index:]
-    test_triples_subsumption = set(subsumption_triples) - set(train_triples) -set(valid_triples)
-    test_triples_membership = set(membership_triples) - set(train_triples) -set(valid_triples)
+    test_triples_subsumption = set(subsumption_triples) 
+    test_triples_membership = set(membership_triples) 
+    
+    valid_triples = check_entities_in_train(train_triples, valid_triples)   
+    test_triples_subsumption = check_entities_in_train(train_triples, test_triples_subsumption)
+    test_triples_membership = check_entities_in_train(train_triples, test_triples_membership)
 
     train_graph = rdflib.Graph()
     valid_graph = rdflib.Graph()
@@ -101,13 +107,9 @@ def split_ontology(dataset_name, file_name, format_, train_ratio, add_noise):
         test_graph.add(triple)
         test_membership_graph.add(triple)
 
-    # Add noisy triples to train_graph
-    if add_noise:
-        for triple in g_noise:
-            train_graph.add(triple)
-
     print(f'Train Triplets found: %d' % len(train_graph))
     train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
+    print(f'Valid Triplets found: %d' % len(valid_graph))
     valid_graph.serialize(destination=f"datasets/bin/{file_name}_val.owl")
     test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
     print(f'Test Triplets (Membership) found: %d' % len(test_membership_graph))
@@ -116,6 +118,58 @@ def split_ontology(dataset_name, file_name, format_, train_ratio, add_noise):
     test_subsumption_graph.serialize(destination=f"datasets/bin/{file_name}_subsumption_test.owl")
 
     return train_graph, valid_graph, test_graph, test_membership_graph, test_subsumption_graph
+
+def split_ontology2(dataset_name, file_name, format_, train_ratio, test_ratio, add_noise):
+    g = rdflib.Graph()
+    g.parse(f'datasets/{dataset_name}.owl')  
+    triples = list(g) 
+    random.shuffle(triples)
+    print(f'Triplets found in {dataset_name}.owl: %d' % len(g))
+
+    if add_noise:   
+        g_noise = rdflib.Graph()
+        g_noise.parse(f'datasets/noise/{file_name}.owl', format=format_)  
+        print(f'Triplets found in {file_name}.owl: %d' % len(g_noise))
+
+    train_index = int(train_ratio * len(triples))
+    test_index = int(test_ratio * len(triples))
+    train_triples = triples[:train_index] 
+    test_triples = triples[train_index:train_index + test_index]
+    valid_triples = triples[train_index + test_index:]
+    print(len(test_triples))
+    print(len(valid_triples))
+    
+    test_triples = check_entities_in_train(train_triples, test_triples)
+    valid_triples = check_entities_in_train(train_triples, valid_triples)   
+    print(len(test_triples))
+    print(len(valid_triples))
+    
+    train_graph = rdflib.Graph()
+    test_graph = rdflib.Graph()
+    valid_graph = rdflib.Graph()
+
+    for triple in train_triples:
+        train_graph.add(triple)
+
+    # Add noisy triples to train_graph
+    if add_noise:
+        for triple in g_noise:
+            train_graph.add(triple)
+
+    for triple in test_triples:
+        test_graph.add(triple)
+
+    for triple in valid_triples:
+        valid_graph.add(triple)
+
+    print(f'Train Triplets found: %d' % len(train_graph))
+    train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
+    print(f'Test Triplets found: %d' % len(test_graph))
+    test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
+    print(f'Valid Triplets found: %d' % len(valid_graph))
+    valid_graph.serialize(destination=f"datasets/bin/{file_name}_val.owl")
+
+    return train_graph, test_graph, valid_graph
 
 def preprocess_ontology_el(ontology):
     tbox_axioms = ontology.getTBoxAxioms(Imports.fromBoolean(True))
@@ -210,27 +264,51 @@ def get_experimets(dataset_name):
                         'format_' : None,
                         'add_noise': False},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_100',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_0.25',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_1000',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_0.5',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_100',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_0.75',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_1000',
+                        'file_name' : 'OWL2DL-1_noisy_gnn_1.0',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_100',
+                        'file_name' : 'OWL2DL-1_noisy_random_0.25',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_1000',
+                        'file_name' : 'OWL2DL-1_noisy_random_0.5',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_random_0.75',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_random_1.0',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.25',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.5',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.75',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'OWL2DL-1',
+                        'file_name' : 'OWL2DL-1_noisy_disjoint_1.0',
                         'format_' : None,
                         'add_noise': True}]
     

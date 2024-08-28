@@ -27,6 +27,7 @@ from src.kge import *
 class GraphModel():
     def __init__(self,
                  file_name,
+                 dataset_name,
                  kge_model,
                  emb_dim,
                  margin,
@@ -42,6 +43,7 @@ class GraphModel():
                  ):
 
         self.file_name = file_name
+        self.dataset_name = dataset_name
         self.kge_model = kge_model
         self.emb_dim = emb_dim
         self.margin = margin
@@ -75,30 +77,26 @@ class GraphModel():
         self._object_properties_ids = None
         self._individuals_ids = None
                                 
-        print("Parameters:")
-        print(f"\tFile name: {self.file_name}")
-        print(f"\tKGE model: {self.kge_model}")
-        print(f"\tEmbedding dimension: {self.emb_dim}")
-        print(f"\tMargin: {self.margin}")
-        print(f"\tWeight decay: {self.weight_decay}")
-        print(f"\tBatch size: {self.batch_size}")
-        print(f"\tLearning rate: {self.lr}")
-        print(f"\tNumber of negatives: {self.num_negs}")
-        print(f"\tTest batch size: {self.test_batch_size}")
-        print(f"\tEpochs: {self.epochs}")
-        print(f"\tDevice: {self.device}")
-        print(f"\tSeed: {self.seed}")
+        # print("Parameters:")
+        # print(f"\tFile name: {self.file_name}")
+        # print(f"\tKGE model: {self.kge_model}")
+        # print(f"\tEmbedding dimension: {self.emb_dim}")
+        # print(f"\tMargin: {self.margin}")
+        # print(f"\tWeight decay: {self.weight_decay}")
+        # print(f"\tBatch size: {self.batch_size}")
+        # print(f"\tLearning rate: {self.lr}")
+        # print(f"\tNumber of negatives: {self.num_negs}")
+        # print(f"\tTest batch size: {self.test_batch_size}")
+        # print(f"\tEpochs: {self.epochs}")
+        # print(f"\tDevice: {self.device}")
+        # print(f"\tSeed: {self.seed}")
                 
         self.projector = OWL2VecStarProjector(bidirectional_taxonomy=True)
         
-        # self.train_path = f'datasets/bin/{self.file_name}_train.owl'
-        # self.valid_path = f'datasets/bin/{self.file_name}_val.owl'
-        # self.test_path = f'datasets/bin/{self.file_name}_test.owl'
-        
-        self.train_path = f'datasets/semrec/_train_{self.file_name}_wrapped.owl'
-        self.valid_path = f'datasets/semrec/_valid_{self.file_name}_wrapped.owl'
-        self.test_path = f'datasets/semrec/_test_{self.file_name}_wrapped.owl'
-        
+        self.train_path = f'datasets/bin/{self.file_name}_train.owl'  
+        self.valid_path = f'datasets/bin/{self.dataset_name}_val.owl'
+        self.test_path = f'datasets/bin/{self.dataset_name}_test.owl'
+
         self._train_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_train.edgelist'
         self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_val_subsumption.edgelist'
         self._test_subsumption_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_test_subsumption.edgelist'
@@ -117,33 +115,28 @@ class GraphModel():
                                random_seed=self.seed)
 
     def _load_graph(self, path, mode="train"):
-        if os.path.exists(path):
-            logger.info(f"Loading graph from {path}")
-            graph = pd.read_csv(path, sep="\t", header=None)
-            graph.columns = ["head", "relation", "tail"]
-        else:
-            logger.info(f"Graph {path} does not exist. Generating it...")
-            if mode == "train":
-                edges = self.projector.project(self.dataset.ontology)
-            elif "valid" in mode:
-                edges = self.projector.project(self.dataset.validation)
-            elif "test" in mode:
-                edges = self.projector.project(self.dataset.testing)
-                
-            edges = [(e.src, e.rel, e.dst) for e in edges]
-            graph = pd.DataFrame(edges, columns=["head", "relation", "tail"])
-                
-            if mode == "train":
-                graph.to_csv(path, sep="\t", header=None, index=False)
-            elif "subsumption" in mode:
-                graph = graph[graph["relation"] == "http://subclassof"]                 
-                graph.to_csv(path, sep="\t", header=None, index=False)
-            elif "membership" in mode:
-                graph = graph[graph["relation"] == "http://type"]
-                graph.to_csv(path, sep="\t", header=None, index=False)
+        logger.info(f"Generating Graph {path}...")
+        if mode == "train":
+            edges = self.projector.project(self.dataset.ontology)
+        elif "valid" in mode:
+            edges = self.projector.project(self.dataset.validation)
+        elif "test" in mode:
+            edges = self.projector.project(self.dataset.testing)
 
-            graph = pd.read_csv(path, sep="\t", header=None)
-            graph.columns = ["head", "relation", "tail"]
+        edges = [(e.src, e.rel, e.dst) for e in edges]
+        graph = pd.DataFrame(edges, columns=["head", "relation", "tail"])
+
+        if mode == "train":
+            graph.to_csv(path, sep="\t", header=None, index=False)
+        elif "subsumption" in mode:
+            graph = graph[graph["relation"] == "http://subclassof"]                 
+            graph.to_csv(path, sep="\t", header=None, index=False)
+        elif "membership" in mode:
+            graph = graph[graph["relation"] == "http://type"]
+            graph.to_csv(path, sep="\t", header=None, index=False)
+
+        graph = pd.read_csv(path, sep="\t", header=None)
+        graph.columns = ["head", "relation", "tail"]
                 
         logger.info(f"Loaded {mode} graph with {len(graph)} edges")
         
@@ -194,25 +187,17 @@ class GraphModel():
         if self._classes is not None:
             return self._classes
 
-        if os.path.exists(self._classes_path):
-            logger.info(f"Loading classes from {self._classes_path}")
-            classes = pd.read_csv(self._classes_path, sep="\t", header=None)
-            classes.columns = ["class"]
-            classes = list(classes["class"].values.flatten())
-            classes.sort()
-            self._classes = classes
-        else:
-            logger.info(f"Classes do not exist. Generating it...")
-            classes = set(self.dataset.ontology.getClassesInSignature())
-            classes |= set(self.dataset.validation.getClassesInSignature())
-            classes |= set(self.dataset.testing.getClassesInSignature())
-            classes = sorted(list(classes))
-            classes = [str(c.toStringID()) for c in classes]
-            classes = pd.DataFrame(classes, columns=["class"])
-            classes.to_csv(self._classes_path, sep="\t", header=None, index=False)
-            classes = list(classes["class"].values.flatten())
-            classes.sort()
-            self._classes = classes
+        logger.info(f"Generating Classes...")
+        classes = set(self.dataset.ontology.getClassesInSignature())
+        classes |= set(self.dataset.validation.getClassesInSignature())
+        classes |= set(self.dataset.testing.getClassesInSignature())
+        classes = sorted(list(classes))
+        classes = [str(c.toStringID()) for c in classes]
+        classes = pd.DataFrame(classes, columns=["class"])
+        classes.to_csv(self._classes_path, sep="\t", header=None, index=False)
+        classes = list(classes["class"].values.flatten())
+        classes.sort()
+        self._classes = classes
          
         return self._classes
 
@@ -221,25 +206,17 @@ class GraphModel():
         if self._object_properties is not None:
             return self._object_properties
 
-        if os.path.exists(self._object_properties_path):
-            logger.info(f"Loading properties from {self._object_properties_path}")
-            properties = pd.read_csv(self._object_properties_path, sep="\t", header=None)
-            properties.columns = ["property"]
-            properties = list(properties["property"].values.flatten())
-            properties.sort()
-            self._object_properties = properties    
-        else:
-            logger.info(f"Properties do not exist. Generating it...")
-            properties = set(self.dataset.ontology.getObjectPropertiesInSignature())
-            properties |= set(self.dataset.validation.getObjectPropertiesInSignature())
-            properties |= set(self.dataset.testing.getObjectPropertiesInSignature())
-            properties = sorted(list(properties))
-            properties = [str(p.toStringID()) for p in properties]
-            properties = pd.DataFrame(properties, columns=["property"])
-            properties.to_csv(self._object_properties_path, sep="\t", header=None, index=False)
-            properties = list(properties["property"].values.flatten())
-            properties.sort()
-            self._object_properties = properties
+        logger.info(f"Generating Properties...")
+        properties = set(self.dataset.ontology.getObjectPropertiesInSignature())
+        properties |= set(self.dataset.validation.getObjectPropertiesInSignature())
+        properties |= set(self.dataset.testing.getObjectPropertiesInSignature())
+        properties = sorted(list(properties))
+        properties = [str(p.toStringID()) for p in properties]
+        properties = pd.DataFrame(properties, columns=["property"])
+        properties.to_csv(self._object_properties_path, sep="\t", header=None, index=False)
+        properties = list(properties["property"].values.flatten())
+        properties.sort()
+        self._object_properties = properties
             
         return self._object_properties
 
@@ -248,25 +225,17 @@ class GraphModel():
         if self._individuals is not None:
             return self._individuals
 
-        if os.path.exists(self._individuals_path):
-            logger.info(f"Loading individuals from {self._individuals_path}")
-            individuals = pd.read_csv(self._individuals_path, sep="\t", header=None)
-            individuals.columns = ["individual"]
-            individuals = list(individuals["individual"].values.flatten())
-            individuals.sort()
-            self._individuals = individuals 
-        else:
-            logger.info(f"Individuals do not exist. Generating it...")
-            individuals = set(self.dataset.ontology.getIndividualsInSignature())
-            individuals |= set(self.dataset.validation.getIndividualsInSignature())
-            individuals |= set(self.dataset.testing.getIndividualsInSignature())
-            individuals = sorted(list(individuals))
-            individuals = [str(i.toStringID()) for i in individuals]
-            individuals = pd.DataFrame(individuals, columns=["individual"])
-            individuals.to_csv(self._individuals_path, sep="\t", header=None, index=False)
-            individuals = list(individuals["individual"].values.flatten())
-            individuals.sort()
-            self._individuals = individuals
+        logger.info(f"Generating Individuals...")
+        individuals = set(self.dataset.ontology.getIndividualsInSignature())
+        individuals |= set(self.dataset.validation.getIndividualsInSignature())
+        individuals |= set(self.dataset.testing.getIndividualsInSignature())
+        individuals = sorted(list(individuals))
+        individuals = [str(i.toStringID()) for i in individuals]
+        individuals = pd.DataFrame(individuals, columns=["individual"])
+        individuals.to_csv(self._individuals_path, sep="\t", header=None, index=False)
+        individuals = list(individuals["individual"].values.flatten())
+        individuals.sort()
+        self._individuals = individuals
         
         return self._individuals
     
@@ -578,6 +547,7 @@ class GraphModel():
                 
                 raw_metrics = (mean_rank, mrr, median_rank, hits_at_1, hits_at_3, hits_at_10, hits_at_100, auc, percentile90, below_1000)
                 filtered_metrics = (filtered_mean_rank, filtered_mrr, fmedian_rank, fhits_at_1, fhits_at_3, fhits_at_10, fhits_at_100, fauc, fpercentile90, fbelow_1000)
+                print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')
         if "test" in mode:
             return raw_metrics, filtered_metrics
         else:
@@ -607,8 +577,10 @@ class GraphModel():
     def test(self):
         logger.info("Testing ontology completion...")
         filtering_labels = self.get_filtering_labels()
+        print('Membership:')
+        membership_metrics = self.compute_ranking_metrics(filtering_labels[1], "test_membership")       
+        print('Subsumption:')
         subsumption_metrics = self.compute_ranking_metrics(filtering_labels[0], "test_subsumption")
-        membership_metrics = self.compute_ranking_metrics(filtering_labels[1], "test_membership")
         return subsumption_metrics, membership_metrics
 
     def compute_rank_roc(self, ranks):
