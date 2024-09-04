@@ -97,15 +97,15 @@ class GraphModel():
         self.valid_path = f'datasets/bin/{self.dataset_name}_val.owl'
         self.test_path = f'datasets/bin/{self.dataset_name}_test.owl'
 
-        self._train_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_train.edgelist'
-        self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_val_subsumption.edgelist'
-        self._test_subsumption_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_test_subsumption.edgelist'
-        self._valid_membership_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_val_membership.edgelist'
-        self._test_membership_graph_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_test_membership.edgelist'
+        self._train_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_train.edgelist'
+        self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'
+        self._test_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_subsumption.edgelist'
+        self._valid_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_membership.edgelist'
+        self._test_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_membership.edgelist'
 
-        self._classes_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_classes.tsv'
-        self._object_properties_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_properties.tsv' 
-        self._individuals_path = f'datasets/bin/owl2vec/{self.file_name}/{self.file_name}_individuals.tsv' 
+        self._classes_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_classes.tsv'
+        self._object_properties_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_properties.tsv' 
+        self._individuals_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_individuals.tsv' 
         
         self.dataset = PathDataset(self.train_path, validation_path = self.valid_path, testing_path = self.test_path)
         
@@ -599,10 +599,10 @@ class GraphModel():
         return auc
             
     def save_embeddings_data(self):
-        out_class_file = f"datasets/bin/owl2vec/{self.file_name}/{self.file_name}_class_embeddings.pkl"
-        out_individual_file = f"datasets/bin/owl2vec/{self.file_name}/{self.file_name}_individual_embeddings.pkl"
-        out_role_file = f"datasets/bin/owl2vec/{self.file_name}/{self.file_name}_role_embeddings.pkl"
-        out_triples_factory_file = f"datasets/bin/owl2vec/{self.file_name}/{self.file_name}_triples_factory.pkl"
+        out_class_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_class_embeddings.pkl"
+        out_individual_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_individual_embeddings.pkl"
+        out_role_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_role_embeddings.pkl"
+        out_triples_factory_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_triples_factory.pkl"
         
         cls_ids = [self.node_to_id[n] for n in self.classes]
         ind_ids = [self.node_to_id[n] for n in self.individuals]
