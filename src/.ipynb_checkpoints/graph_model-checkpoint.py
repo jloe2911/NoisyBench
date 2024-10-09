@@ -76,20 +76,6 @@ class GraphModel():
         self._classes_ids = None
         self._object_properties_ids = None
         self._individuals_ids = None
-                                
-        # print("Parameters:")
-        # print(f"\tFile name: {self.file_name}")
-        # print(f"\tKGE model: {self.kge_model}")
-        # print(f"\tEmbedding dimension: {self.emb_dim}")
-        # print(f"\tMargin: {self.margin}")
-        # print(f"\tWeight decay: {self.weight_decay}")
-        # print(f"\tBatch size: {self.batch_size}")
-        # print(f"\tLearning rate: {self.lr}")
-        # print(f"\tNumber of negatives: {self.num_negs}")
-        # print(f"\tTest batch size: {self.test_batch_size}")
-        # print(f"\tEpochs: {self.epochs}")
-        # print(f"\tDevice: {self.device}")
-        # print(f"\tSeed: {self.seed}")
                 
         self.projector = OWL2VecStarProjector(bidirectional_taxonomy=True)
         
@@ -150,13 +136,13 @@ class GraphModel():
         self._train_graph = self._load_graph(self._train_graph_path, mode="train")
         return self._train_graph
 
-    @property
-    def valid_subsumption_graph(self):
-        if self._valid_subsumption_graph is not None:
-            return self._valid_subsumption_graph
+#     @property
+#     def valid_subsumption_graph(self):
+#         if self._valid_subsumption_graph is not None:
+#             return self._valid_subsumption_graph
 
-        self._valid_subsumption_graph = self._load_graph(self._valid_subsumption_graph_path, mode="valid_subsumption")
-        return self._valid_subsumption_graph
+#         self._valid_subsumption_graph = self._load_graph(self._valid_subsumption_graph_path, mode="valid_subsumption")
+#         return self._valid_subsumption_graph
                                                             
     @property
     def valid_membership_graph(self):

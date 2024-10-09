@@ -171,6 +171,21 @@ def split_ontology2(dataset_name, file_name, format_, train_ratio, test_ratio, a
 
     return train_graph, test_graph, valid_graph
 
+def get_G(g, resources):
+    describe_graph = rdflib.Graph()
+    for subject_resource in resources:
+        for triple in g.triples((None, None, URIRef(subject_resource))):
+            describe_graph.add(triple) 
+        for triple in g.triples((URIRef(subject_resource), None, None)):
+            describe_graph.add(triple) 
+    return describe_graph
+
+def create_G(triples):
+    G = rdflib.Graph()
+    for triple in triples:
+        G.add(triple)
+    return G
+
 def preprocess_ontology_el(ontology):
     tbox_axioms = ontology.getTBoxAxioms(Imports.fromBoolean(True))
     abox_axioms = ontology.getABoxAxioms(Imports.fromBoolean(True))
@@ -311,5 +326,12 @@ def get_experimets(dataset_name):
                         'file_name' : 'OWL2DL-1_noisy_disjoint_1.0',
                         'format_' : None,
                         'add_noise': True}]
+        
+    elif dataset_name == 'lubm':
     
+        experiments = [{'dataset_name' : 'lubm',
+                        'file_name' : 'lubm',
+                        'format_' : None,
+                        'add_noise': False}]
+
     return experiments
