@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Ontology xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2002/07/owl#" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:xsd="http://www.w3.org/2001/XMLSchema#">
+    <Prefix name="" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0AP3"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0AP3"/>
+    </ClassAssertion>
+    <Declaration>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0AP3"/>
+    </ClassAssertion>
+    <Declaration>
+        <Class IRI="http://benchmark/OWL2Bench#Woman"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://benchmark/OWL2Bench#Woman"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0AP3"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#P109"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#P109"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#P109"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC3"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC3"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC3"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D1CS1"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D1CS1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D1CS1"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C1D3VP1"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C1D3VP1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C1D3VP1"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D0AssocP0"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D0AssocP0"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0C4D0AssocP0"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#Basketball"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#Basketball"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#Basketball"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D3EC26"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D3EC26"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D3EC26"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#LawnTennis"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#LawnTennis"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#LawnTennis"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#FictionMovie"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#FictionMovie"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#FictionMovie"/>
+    </ClassAssertion>
+    <Declaration>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC24"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2002/07/owl#Thing"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC24"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="https://kracr.iiitd.edu.in/OWL2Bench#CollegeDiscipline"/>
+        <NamedIndividual IRI="http://benchmark/OWL2Bench#U0WC0D0UGC24"/>
+    </ClassAssertion>
+</Ontology>
