@@ -1,5 +1,5 @@
-// javac -cp ".;lib/*" Main.java
-// java -cp ".;lib/*" Main
+// javac -cp ".;lib/*" Main_no_parallel.java
+// java -cp ".;lib/*" Main_no_parallel
 
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.reasoner.Reasoner;
@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class Main {
+public class Main_no_parallel {
     public static void main(String[] args) {
         // Path to the directory containing your ontologies
         File dir = new File("input/"); // Change this to your ontologies folder
