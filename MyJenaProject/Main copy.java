@@ -10,9 +10,6 @@ import org.apache.jena.rdf.model.InfModel;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) {
@@ -21,24 +18,9 @@ public class Main {
         File[] files = dir.listFiles((d, name) -> name.endsWith(".owl"));
 
         // Check if files were found
-        if (files != null && files.length > 0) {
-            // Create a fixed thread pool based on available processors
-            int numThreads = Runtime.getRuntime().availableProcessors();
-            ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-
+        if (files != null) {
             for (File ontologyFile : files) {
-                // Submit each ontology processing task to the executor
-                executor.submit(() -> processOntology(ontologyFile));
-            }
-
-            // Shutdown the executor and wait for all tasks to finish
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(1, TimeUnit.HOURS)) {
-                    System.err.println("Timed out waiting for tasks to finish.");
-                }
-            } catch (InterruptedException e) {
-                System.err.println("Thread execution interrupted: " + e.getMessage());
+                processOntology(ontologyFile);
             }
         } else {
             System.out.println("No OWL files found in the specified directory.");
