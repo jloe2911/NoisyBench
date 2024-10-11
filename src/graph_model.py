@@ -79,7 +79,7 @@ class GraphModel():
                 
         self.projector = OWL2VecStarProjector(bidirectional_taxonomy=True)
         
-        self.train_path = f'datasets/bin/{self.file_name}_train.owl'  
+        self.train_path = f'datasets/bin/{self.dataset_name}_train.owl'  
         self.valid_path = f'datasets/bin/{self.dataset_name}_val.owl'
         self.test_path = f'datasets/bin/{self.dataset_name}_test.owl'
 

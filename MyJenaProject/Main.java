@@ -1,6 +1,9 @@
 // javac -cp ".;lib/*" Main.java
 // java -cp ".;lib/*" Main
 
+// javac -cp ".:lib/*" Main.java
+// java -cp ".:lib/*" Main
+
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.ReasonerRegistry;
