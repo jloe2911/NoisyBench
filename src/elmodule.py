@@ -253,3 +253,4 @@ class ElModel(EmbeddingELModel):
             median_rank = np.median(rank_vals)
 
             print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')
+            return (mrr, mean_rank, median_rank, hits_at_1, hits_at_3, hits_at_10, hits_at_100)

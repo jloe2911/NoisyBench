@@ -1,4 +1,0 @@
-torch
-rdflib
-jupyter
-ipykernel
