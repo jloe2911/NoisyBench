@@ -531,8 +531,8 @@ class GraphModel():
                 fpercentile90 = np.percentile(filtered_rank_vals, 90)
                 fbelow_1000 = self.calculate_percentile_1000(filtered_ranks)
                 
-                raw_metrics = (mean_rank, mrr, median_rank, hits_at_1, hits_at_3, hits_at_10, hits_at_100, auc, percentile90, below_1000)
-                filtered_metrics = (filtered_mean_rank, filtered_mrr, fmedian_rank, fhits_at_1, fhits_at_3, fhits_at_10, fhits_at_100, fauc, fpercentile90, fbelow_1000)
+                raw_metrics = (mrr, mean_rank, median_rank, hits_at_1, hits_at_3, hits_at_10, hits_at_100)
+                filtered_metrics = (filtered_mrr, filtered_mean_rank, fmedian_rank, fhits_at_1, fhits_at_3, fhits_at_10, fhits_at_100)
                 print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')
         if "test" in mode:
             return raw_metrics, filtered_metrics

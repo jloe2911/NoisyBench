@@ -338,7 +338,9 @@ def get_experimets(dataset_name):
     return experiments
 
 def save_results(metrics_subsumption, metrics_membership, results_dir):
-    with open(result_dir, 'w') as f:  # Change 'a' to 'w'
+    s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100 = metrics_subsumption
+    m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100 = metrics_membership
+    with open(results_dir, 'w') as f:  # Change 'a' to 'w'
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line1 = [s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100]
         line2 = [m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100]
@@ -348,4 +350,4 @@ def save_results(metrics_subsumption, metrics_membership, results_dir):
         line += "Membership:\n"
         line += "|" + "|".join([f"{x:.3f}" for x in line2]) + "\n"
         f.write(line)
-    print("Results saved to ", result_dir)
+    print("Results saved to ", results_dir)
