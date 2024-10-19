@@ -57,121 +57,6 @@ def copy_graph(g):
     
     return new_g
 
-def check_entities_in_train(train_triples, target_triples):
-    train_entities = {subj for subj, _, _ in train_triples} | {obj for _, _, obj in train_triples}
-    target_triples = [triple for triple in target_triples if (triple[0] in train_entities) and (triple[2] in train_entities)]
-    return target_triples
-
-def split_ontology(dataset_name, file_name, format_, train_ratio):
-    g = rdflib.Graph()
-    g.parse(f'datasets/{dataset_name}.owl')  
-    triples = list(g)  
-    random.shuffle(triples)
-    print(f'Triplets found in {dataset_name}.owl: %d' % len(g))
-
-    g_subsumption = rdflib.Graph()
-    g_subsumption.parse(f'datasets/test/{dataset_name}_classification.owl')
-    subsumption_triples = list(g_subsumption.triples((None, URIRef('http://www.w3.org/2000/01/rdf-schema#subClassOf'), None))) 
-    
-    g_membership = rdflib.Graph()
-    g_membership.parse(f'datasets/test/{dataset_name}_realisation.owl')
-    membership_triples = list(g_membership.triples((None, RDF.type, None))) 
-
-    train_index = int(train_ratio * len(triples))
-    train_triples = triples[:train_index]
-    valid_triples = triples[train_index:]
-    test_triples_subsumption = set(subsumption_triples) 
-    test_triples_membership = set(membership_triples) 
-    
-    valid_triples = check_entities_in_train(train_triples, valid_triples)   
-    test_triples_subsumption = check_entities_in_train(train_triples, test_triples_subsumption)
-    test_triples_membership = check_entities_in_train(train_triples, test_triples_membership)
-
-    train_graph = rdflib.Graph()
-    valid_graph = rdflib.Graph()
-    test_graph = rdflib.Graph()
-    test_subsumption_graph = rdflib.Graph()
-    test_membership_graph = rdflib.Graph()
-
-    for triple in train_triples:
-        train_graph.add(triple)
-
-    for triple in valid_triples:
-        valid_graph.add(triple)
-
-    # Tasks: subsumption, membership   
-    for triple in test_triples_subsumption:
-        test_graph.add(triple)
-        test_subsumption_graph.add(triple)
-            
-    for triple in test_triples_membership:
-        test_graph.add(triple)
-        test_membership_graph.add(triple)
-
-    print(f'Train Triplets found: %d' % len(train_graph))
-    train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
-    print(f'Valid Triplets found: %d' % len(valid_graph))
-    valid_graph.serialize(destination=f"datasets/bin/{file_name}_val.owl")
-    test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
-    print(f'Test Triplets (Membership) found: %d' % len(test_membership_graph))
-    test_membership_graph.serialize(destination=f"datasets/bin/{file_name}_membership_test.owl")
-    print(f'Test Triplets (Subsumption) found: %d' % len(test_subsumption_graph))
-    test_subsumption_graph.serialize(destination=f"datasets/bin/{file_name}_subsumption_test.owl")
-
-    return train_graph, valid_graph, test_graph, test_membership_graph, test_subsumption_graph
-
-def split_ontology2(dataset_name, file_name, format_, train_ratio, test_ratio, add_noise):
-    g = rdflib.Graph()
-    g.parse(f'datasets/{dataset_name}.owl')  
-    triples = list(g) 
-    random.shuffle(triples)
-    print(f'Triplets found in {dataset_name}.owl: %d' % len(g))
-
-    if add_noise:   
-        g_noise = rdflib.Graph()
-        g_noise.parse(f'datasets/noise/{file_name}.owl', format=format_)  
-        print(f'Triplets found in {file_name}.owl: %d' % len(g_noise))
-
-    train_index = int(train_ratio * len(triples))
-    test_index = int(test_ratio * len(triples))
-    train_triples = triples[:train_index] 
-    test_triples = triples[train_index:train_index + test_index]
-    valid_triples = triples[train_index + test_index:]
-    print(len(test_triples))
-    print(len(valid_triples))
-    
-    test_triples = check_entities_in_train(train_triples, test_triples)
-    valid_triples = check_entities_in_train(train_triples, valid_triples)   
-    print(len(test_triples))
-    print(len(valid_triples))
-    
-    train_graph = rdflib.Graph()
-    test_graph = rdflib.Graph()
-    valid_graph = rdflib.Graph()
-
-    for triple in train_triples:
-        train_graph.add(triple)
-
-    # Add noisy triples to train_graph
-    if add_noise:
-        for triple in g_noise:
-            train_graph.add(triple)
-
-    for triple in test_triples:
-        test_graph.add(triple)
-
-    for triple in valid_triples:
-        valid_graph.add(triple)
-
-    print(f'Train Triplets found: %d' % len(train_graph))
-    train_graph.serialize(destination=f"datasets/bin/{file_name}_train.owl")
-    print(f'Test Triplets found: %d' % len(test_graph))
-    test_graph.serialize(destination=f"datasets/bin/{file_name}_test.owl")
-    print(f'Valid Triplets found: %d' % len(valid_graph))
-    valid_graph.serialize(destination=f"datasets/bin/{file_name}_val.owl")
-
-    return train_graph, test_graph, valid_graph
-
 def get_G(g, resources):
     describe_graph = rdflib.Graph()
     for subject_resource in resources:
@@ -342,12 +227,12 @@ def save_results(metrics_subsumption, metrics_membership, results_dir):
     m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100 = metrics_membership
     with open(results_dir, 'w') as f:  # Change 'a' to 'w'
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line1 = [s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100]
-        line2 = [m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100]
+        line1 = [m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100]
+        line2 = [s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100]
         line = f"Results as of {timestamp}:\n"
-        line += "Subsumption:\n"
-        line += "|" + "|".join([f"{x:.3f}" for x in line1]) + "\n"
         line += "Membership:\n"
-        line += "|" + "|".join([f"{x:.3f}" for x in line2]) + "\n"
+        line += " & " + " & ".join([f"{x:.3f}" for x in line1]) + "\n"
+        line += "Subsumption:\n"
+        line += " & " + " & ".join([f"{x:.3f}" for x in line2]) + "\n"
         f.write(line)
     print("Results saved to ", results_dir)
