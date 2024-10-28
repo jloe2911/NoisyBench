@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class Main {
     public static void main(String[] args) {
         // Path to the directory containing your ontologies
-        File dir = new File("input/"); // Change this to your ontologies folder
+        File dir = new File("input_family/"); // Change this to your ontologies folder
         File[] files = dir.listFiles((d, name) -> name.endsWith(".ttl")); // Change .owl to .ttl
 
         // Check if files were found
@@ -61,7 +61,7 @@ public class Main {
             InfModel infModel = ModelFactory.createInfModel(reasoner, model);
     
             // Create a new TTL file to store inferences
-            String outputFileName = "output/" + inputFile.getName().replace(".ttl", "_inferred.ttl"); 
+            String outputFileName = "output_family/" + inputFile.getName().replace(".ttl", "_inferred.ttl"); 
             try (FileOutputStream out = new FileOutputStream(outputFileName)) {
                 // Write the header for Turtle format
                 out.write("@prefix ns1: <http://benchmark/OWL2Bench#> .\n".getBytes());

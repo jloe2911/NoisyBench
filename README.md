@@ -17,7 +17,7 @@ Generates ABox noise in an ontology: a method based on disjoint axioms, a Graph 
 We use OWL2DL-1 ontology that can be found [here](https://drive.google.com/drive/folders/1HYURRLaQkLK8cQwV-UBNKK4_Zur2nU68?usp=drive_link) and should be added to `datasets/{dataset_name}.owl`.
 The notebook outputs noisy datasets stored in `datasets/noise/{dataset_name}_noisy_{noise_generation_method}_{noise_percentage}.owl`. The noisy datasets can also be found [here](https://drive.google.com/drive/folders/14TzofCSdxgvXEA5aJ7fhppK8EuN5k2aH?usp=drive_link).
 2. `GenerateGraphs.ipynb`: 
-For each resource $r$, a small graph $g$ is created using the following command: DESCRIBE <r>. This command retrieves all statements related to the resource $r$ for inference.
+For each resource $r$, a small graph $g$ is created using the following command: ```DESCRIBE <r>```. This command retrieves all statements related to the resource $r$ for inference.
 3. `MyJenaProject`: 
 Applies Jena to graphs $g_1$, $g_2$, ..., $g_R$, where $R$ represents the set of resources from the original ontology. This generates inference graphs $i_1$, $i_2$, ..., $i_R$. The idea is that each subgraph $g$ and its corresponding inference graph $i$ form a feature-label pair $(g, i)$.
 4. `PrepareGraphs.ipynb`: 

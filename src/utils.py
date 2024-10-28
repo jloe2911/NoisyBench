@@ -222,17 +222,21 @@ def get_experimets(dataset_name):
 
     return experiments
 
-def save_results(metrics_subsumption, metrics_membership, results_dir):
-    s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100 = metrics_subsumption
-    m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100 = metrics_membership
-    with open(results_dir, 'w') as f:  # Change 'a' to 'w'
+def save_results(metrics_subsumption, metrics_membership, metrics_link_prediction, results_dir):
+    s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10 = metrics_subsumption
+    m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10 = metrics_membership
+    lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10 = metrics_link_prediction
+    with open(results_dir, 'w') as f: 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line1 = [m_mrr, m_mean_rank, m_median_rank, m_hits_at_1, m_hits_at_3, m_hits_at_10, m_hits_at_100]
-        line2 = [s_mrr, s_mean_rank, s_median_rank, s_hits_at_1, s_hits_at_3, s_hits_at_10, s_hits_at_100]
+        line1 = [m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10]
+        line2 = [s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10]
+        line3 = [lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10]
         line = f"Results as of {timestamp}:\n"
         line += "Membership:\n"
         line += " & " + " & ".join([f"{x:.3f}" for x in line1]) + "\n"
         line += "Subsumption:\n"
         line += " & " + " & ".join([f"{x:.3f}" for x in line2]) + "\n"
+        line += "Link Prediction:\n"
+        line += " & " + " & ".join([f"{x:.3f}" for x in line3]) + "\n"
         f.write(line)
     print("Results saved to ", results_dir)

@@ -1,5 +1,4 @@
 import numpy as np
-from tqdm import trange
 import torch
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
@@ -9,7 +8,6 @@ from itertools import cycle
 
 import mowl
 mowl.init_jvm('10g')
-from mowl.datasets import PathDataset, Dataset
 from mowl.base_models import EmbeddingELModel
 from mowl.nn import ELEmModule, ELBoxModule, BoxSquaredELModule
 from mowl.utils.data import FastTensorDataLoader
@@ -38,20 +36,24 @@ class ELModule(nn.Module):
     def tbox_forward(self, *args, **kwargs):
         return self.module(*args, **kwargs)
 
-    def abox_forward(self, indiv_idxs):
+    def abox_forward(self, indiv_idxs, mode):
         class_embed = self.module.class_center if self.module_name == "box2el" else self.module.class_embed
-        all_class_embed = class_embed.weight
         indiv_embed = self.indiv_embeddings(indiv_idxs)
-        membership = torch.mm(indiv_embed, all_class_embed.t())
-        if self.module_name == "elem":
-            rad_embed = self.module.class_rad.weight
-            rad_embed = torch.abs(rad_embed).view(1, -1)
-            membership = membership + rad_embed
-        elif self.module_name in ["elbox", "box2el"]:
-            offset_embed = self.module.class_offset.weight
-            offset_embed = torch.abs(offset_embed).mean(dim=1).view(1, -1)
-            membership = membership + offset_embed
-        return membership
+        all_class_embed = class_embed.weight
+        all_indiv_embed = self.indiv_embeddings.weight
+        if 'link_prediction' in mode:
+            score = torch.mm(indiv_embed, all_indiv_embed.t())
+        else: 
+            score = torch.mm(indiv_embed, all_class_embed.t())
+            if self.module_name == "elem":
+                rad_embed = self.module.class_rad.weight
+                rad_embed = torch.abs(rad_embed).view(1, -1)
+                score = score + rad_embed
+            elif self.module_name in ["elbox", "box2el"]:
+                offset_embed = self.module.class_offset.weight
+                offset_embed = torch.abs(offset_embed).mean(dim=1).view(1, -1)
+                score = score + offset_embed
+        return score
 
 class ElModel(EmbeddingELModel):
     def __init__(self, dataset, module_name, dim, margin, batch_size, test_batch_size, epochs, learning_rate, device):
@@ -76,13 +78,28 @@ class ElModel(EmbeddingELModel):
             ontology = self.dataset.validation
         elif dataset_type == "test":
             ontology = self.dataset.testing
+        
         abox = []
+        property_assertions = []
+        
         for cls in self.dataset.classes:
-            abox.extend(list(ontology.getClassAssertionAxioms(cls)))
+            abox.extend(list(ontology.getClassAssertionAxioms(cls)))  
+
+        object_properties = list(ontology.getObjectPropertiesInSignature())
+        individuals = ontology.getIndividualsInSignature()
+        for individual in individuals:
+            for prop in object_properties:
+                assertions = ontology.getObjectPropertyAssertionAxioms(individual)
+                for assertion in assertions:
+                    if assertion.getProperty().equals(prop):  
+                        property_assertions.append(assertion)
+
         nb_individuals = len(self.dataset.individuals)
         nb_classes = len(self.dataset.classes)
+        
         owl_indiv_to_id = self.dataset.individuals.to_index_dict()
         owl_class_to_id = self.dataset.classes.to_index_dict()
+        
         labels = np.zeros((nb_individuals, nb_classes), dtype=np.int32)
         for axiom in abox:
             cls = axiom.getClassExpression()
@@ -90,12 +107,21 @@ class ElModel(EmbeddingELModel):
             cls_id = owl_class_to_id[cls]
             indiv_id = owl_indiv_to_id[indiv]
             labels[indiv_id, cls_id] = 1
+        
+        property_labels = np.zeros((nb_individuals, nb_individuals), dtype=np.int32)
+        for axiom in property_assertions:
+            subject = axiom.getSubject()
+            obj = axiom.getObject()
+            subj_id = owl_indiv_to_id[subject]
+            obj_id = owl_indiv_to_id[obj]
+            property_labels[subj_id, obj_id] = 1  
+        
         idxs = np.arange(nb_individuals)
-        return torch.tensor(idxs), torch.FloatTensor(labels)
-                                                                                            
+        
+        return torch.tensor(idxs), torch.FloatTensor(labels), torch.FloatTensor(property_labels)
+                                                                  
     def _train(self):
         abox_ds_train = self.get_abox_data("train")
-
         abox_dl_train = FastTensorDataLoader(*abox_ds_train, batch_size=self.batch_size, shuffle=True)
 
         el_dls = {gci_name: DataLoader(ds, batch_size=self.batch_size, shuffle=True) for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
@@ -107,8 +133,6 @@ class ElModel(EmbeddingELModel):
         else:
             main_dl = el_dls["gci0"]
             main_dl_name = "gci0"
-
-        print("Main DataLoader: {}".format(main_dl_name))
 
         total_el_dls_size = sum(el_dls_sizes.values())
         el_dls_weights = {gci_name: ds_size / total_el_dls_size for gci_name, ds_size in el_dls_sizes.items()}
@@ -127,14 +151,15 @@ class ElModel(EmbeddingELModel):
 
             train_el_loss = 0
             train_abox_loss = 0
+            train_abox_loss_lp = 0
 
             for batch_data in main_dl:
                 if main_dl_name == "abox":
-                    ind_idxs, labels = batch_data
+                    ind_idxs, labels, propery_labels = batch_data
                     gci0_batch = next(el_dls["gci0"]).to(self.device)
                 elif main_dl_name == "gci0":
+                    ind_idxs, labels, propery_labels = next(abox_dl_train)
                     gci0_batch = batch_data.to(self.device)
-                    ind_idxs, labels = next(abox_dl_train)
 
                 pos_gci0 = module.tbox_forward(gci0_batch, "gci0").mean() * el_dls_weights["gci0"]
                 neg_idxs = np.random.choice(self.nb_classes, size=len(gci0_batch), replace=True)
@@ -156,25 +181,33 @@ class ElModel(EmbeddingELModel):
 
                     el_loss += -F.logsigmoid(-pos_gci + neg_gci - self.margin).mean()
 
-                abox_logits = module.abox_forward(ind_idxs.to(self.device))
+                abox_logits = module.abox_forward(ind_idxs.to(self.device), 'membership')
                 abox_loss = F.binary_cross_entropy_with_logits(abox_logits, labels.to(self.device))
 
-                loss = el_loss + abox_loss
+                abox_logits_lp = module.abox_forward(ind_idxs.to(self.device), 'link_prediction')
+                abox_loss_lp = F.binary_cross_entropy_with_logits(abox_logits_lp, propery_labels.to(self.device))
+
+                loss = el_loss + abox_loss + abox_loss_lp
 
                 loss.backward()
                 optimizer.step()
                 train_el_loss += el_loss.item()
                 train_abox_loss += abox_loss.item()
+                train_abox_loss_lp += abox_loss_lp.item()
 
             train_el_loss /= len(main_dl)
             train_abox_loss /= len(main_dl)
-            if (epoch % 100) == 0:
-                print(f"Epoch: {epoch}, Training: EL loss: {train_el_loss:.4f}, ABox loss: {train_abox_loss:.4f}")
+            train_abox_loss_lp /= len(main_dl)
+            if (epoch % 25) == 0:
+                print(f"Epoch: {epoch}, Training: EL loss: {train_el_loss:.4f}, ABox loss (Membership): {train_abox_loss:.4f}, ABox loss (Link Prediction): {train_abox_loss_lp:.4f}")
             
     def predict(self, heads, tails, mode):
         aux = heads.to(self.device)
         num_heads = len(heads)
-        tail_ids = torch.arange(len(self.dataset.classes)).to(self.device)
+        if 'link_prediction' in mode:
+            tail_ids = torch.arange(len(self.dataset.individuals)).to(self.device)
+        else: 
+            tail_ids = torch.arange(len(self.dataset.classes)).to(self.device)
         heads = heads.to(self.device)
         heads = heads.repeat(len(tail_ids), 1).T
         heads = heads.reshape(-1)
@@ -187,7 +220,11 @@ class ElModel(EmbeddingELModel):
         if "subsumption" in mode:    
             predictions = -self.module.tbox_forward(data, "gci0")
         elif "membership" in mode:
-            predictions = self.module.abox_forward(aux)
+            predictions = self.module.abox_forward(aux, mode)
+            max_ = torch.max(predictions)
+            predictions = predictions - max_
+        elif "link_prediction" in mode:
+            predictions = self.module.abox_forward(aux, mode)
             max_ = torch.max(predictions)
             predictions = predictions - max_
         predictions = predictions.reshape(-1, len(tail_ids))
@@ -195,30 +232,31 @@ class ElModel(EmbeddingELModel):
         return predictions
     
     def _eval(self, mode):
-        all_tail_ids = torch.arange(self.nb_classes)
         if "subsumption" in mode:
-            all_head_ids = torch.arange(self.nb_classes)
             ds = self.testing_datasets["gci0"][:]
             sub_class = ds[:, 0]
             super_class = ds[:, 1]
             eval_dl = FastTensorDataLoader(sub_class, super_class, batch_size=self.test_batch_size, shuffle=False)
         elif "membership" in mode:
-            all_head_ids = torch.arange(self.nb_individuals)
-            _, labels = self.get_abox_data("test")
-            ds = torch.nonzero(labels).squeeze() #shape
+            _, labels, _ = self.get_abox_data("test")
+            ds = torch.nonzero(labels).squeeze() 
             individuals = ds[:, 0] 
             classes = ds[:, 1]
-            eval_dl = FastTensorDataLoader(individuals, classes, batch_size=self.test_batch_size, shuffle=False)            
+            eval_dl = FastTensorDataLoader(individuals, classes, batch_size=self.test_batch_size, shuffle=False)       
+        elif "link_prediction" in mode:
+            _, _, property_labels = self.get_abox_data("test")
+            ds = torch.nonzero(property_labels).squeeze()  
+            individuals = ds[:, 0]  
+            individuals2 = ds[:, 1]  
+            eval_dl = FastTensorDataLoader(individuals, individuals2, batch_size=self.test_batch_size, shuffle=False)     
 
-        mean_rank = 0
         ranks = dict()
         rank_vals = []
 
         mrr = 0
         hits_at_1 = 0
-        hits_at_3 = 0
+        hits_at_5 = 0
         hits_at_10 = 0
-        hits_at_100 = 0
         
         with torch.no_grad():
             for head_idxs, tail_idxs in eval_dl:
@@ -228,29 +266,23 @@ class ElModel(EmbeddingELModel):
                     preds = predictions[i]
                     orderings = torch.argsort(preds, descending=True)
                     rank = torch.where(orderings == tail)[0].item()
-                    mean_rank += rank
                     rank_vals.append(rank)
                     if rank not in ranks:
                         ranks[rank] = 0
                     ranks[rank] += 1
 
                     mrr += 1/(rank+1)
-                    if rank <= 1:
+                    if rank < 1:
                         hits_at_1 += 1
-                    if rank <= 3:
-                        hits_at_3 += 1
-                    if rank <= 10:
+                    if rank < 5:
+                        hits_at_5 += 1
+                    if rank < 10:
                         hits_at_10 += 1
-                    if rank <= 100:
-                        hits_at_100 += 1
                         
-            mean_rank /= eval_dl.dataset_len
             mrr /= eval_dl.dataset_len
             hits_at_1 /= eval_dl.dataset_len
-            hits_at_3 /= eval_dl.dataset_len
+            hits_at_5 /= eval_dl.dataset_len
             hits_at_10 /= eval_dl.dataset_len
-            hits_at_100 /= eval_dl.dataset_len
-            median_rank = np.median(rank_vals)
 
-            print(f'MRR: {mrr:.3f}, Mean Rank: {mean_rank:.3f}, Median Rank: {median_rank:.3f}, Hits@1: {hits_at_1:.3f}, Hits@3: {hits_at_3:.3f}, Hits@10: {hits_at_10:.3f}, Hits@100: {hits_at_100:.3f}')
-            return (mrr, mean_rank, median_rank, hits_at_1, hits_at_3, hits_at_10, hits_at_100)
+            print(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+            return (mrr, hits_at_1, hits_at_5, hits_at_10)

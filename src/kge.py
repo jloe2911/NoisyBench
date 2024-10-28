@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch as th
-from pykeen.models import TransE, DistMult, ConvKB, ERModel, TransD, ConvE, RotatE
+from pykeen.models import TransE, DistMult, ConvKB, TransD, ConvE, RotatE
 
 class OrderE(TransE):
     def __init__(self, *args, **kwargs):

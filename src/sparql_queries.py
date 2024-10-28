@@ -1,4 +1,3 @@
-import rdflib
 from rdflib import URIRef
 from src.utils import *
 
