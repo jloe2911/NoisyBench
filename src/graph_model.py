@@ -118,7 +118,7 @@ class GraphModel():
             graph = graph[graph["relation"] == "http://type"]
             graph.to_csv(path, sep="\t", header=None, index=False)
         elif "link_prediction" in mode:
-            graph = graph[graph['relation'].str.startswith('http://benchmark/OWL2Bench#')]
+            graph = graph[graph['relation'].str.startswith('http://benchmark/OWL2Bench#')] # change here if you are using another ontology than OWL2Bench
             graph.to_csv(path, sep="\t", header=None, index=False)
 
         graph = pd.read_csv(path, sep="\t", header=None)
@@ -335,8 +335,7 @@ class GraphModel():
             return self._object_property_ids
         
         prop_to_id = {c: self.relation_to_id[c] for c in self.object_properties if c in self.relation_to_id}
-        
-        object_property_to_id = th.tensor(list(prop_to_id.values()), dtype=th.long, device=self.device)
+
         return self._object_properties_ids
 
     @property
@@ -381,89 +380,13 @@ class GraphModel():
     
     def train(self):
         raise NotImplementedError
-        
-    def get_filtering_labels(self):
-        logger.info("Getting predictions and labels")
-
-        num_test_subsumption_heads = len(self.classes)
-        num_test_subsumption_tails = len(self.classes)
-        num_test_membership_heads = len(self.individuals)
-        num_test_membership_tails = len(self.classes)
-        num_test_link_prediction_heads = len(self.individuals)
-        num_test_link_prediction_tails = len(self.individuals)
-
-        subsumption_relation = "http://subclassof"
-        membership_relation = "http://type"
-            
-        filter_subsumption_labels = np.ones((num_test_subsumption_heads, num_test_subsumption_tails), dtype=np.int32)
-        filter_membership_labels = np.ones((num_test_membership_heads, num_test_membership_tails), dtype=np.int32)
-        filter_link_prediction_labels = np.ones((num_test_link_prediction_heads, num_test_link_prediction_tails), dtype=np.int32)
-        
-        train_dataloader = self.create_graph_dataloader(mode="train", batch_size=self.batch_size)
-        subsumption_triples = 0
-        membership_triples = 0
-        link_prediction_triples = 0
-        with th.no_grad():
-            for head_idxs, rel_idxs, tail_idxs in train_dataloader:
-                head_idxs = head_idxs.to(self.device)
-                
-                for i, head_graph_id in enumerate(head_idxs):
-                    rel = rel_idxs[i]
-                    rel_name = self.id_to_relation[rel.item()]
-                    if rel_name == subsumption_relation:
-                        tail_graph_id = tail_idxs[i]
-                        
-                        head_class = self.id_to_node[head_graph_id.item()]
-                        tail_class = self.id_to_node[tail_graph_id.item()]
-                        if not head_class in self.classes or not tail_class in self.classes:
-                            continue
-                                                
-                        head_ont_id = th.where(self.classes_ids == head_graph_id)[0]
-                        rel = rel_idxs[i]
-                        tail_ont_id = th.where(self.classes_ids == tail_graph_id)[0]
-                        
-                        filter_subsumption_labels[head_ont_id, tail_ont_id] = 10000
-                        subsumption_triples += 1
-                    elif rel_name == membership_relation:
-                        tail_graph_id = tail_idxs[i]
-
-                        head_individual = self.id_to_node[head_graph_id.item()]
-                        tail_class = self.id_to_node[tail_graph_id.item()]
-                        if not head_individual in self.individuals or not tail_class in self.classes:
-                            continue
-                            
-                        head_ont_id = th.where(self.individuals_ids == head_graph_id)[0]
-                        tail_ont_id = th.where(self.classes_ids == tail_graph_id)[0]
-                        
-                        filter_membership_labels[head_ont_id, tail_ont_id] = 10000
-                        membership_triples += 1
-                    elif rel_name.startswith('http://benchmark/OWL2Bench#'):
-                        tail_graph_id = tail_idxs[i]
-
-                        head_individual = self.id_to_node[head_graph_id.item()]
-                        tail_individual = self.id_to_node[tail_graph_id.item()]
-                        if not head_individual in self.individuals or not tail_individual in self.individuals:
-                            continue
-                            
-                        head_ont_id = th.where(self.individuals_ids == head_graph_id)[0]
-                        tail_ont_id = th.where(self.individuals_ids == tail_graph_id)[0]
-                        
-                        filter_link_prediction_labels[head_ont_id, tail_ont_id] = 10000
-                        link_prediction_triples += 1
-                    else:
-                        continue
-
-        logger.info(f"Subsumption filtering triples: {subsumption_triples}")
-        logger.info(f"Membership filtering triples: {membership_triples}")
-        logger.info(f"Link Prediction filtering triples: {link_prediction_triples}")
-        return filter_subsumption_labels, filter_membership_labels, filter_link_prediction_labels
 
     def load_best_model(self):
         logger.info(f"Loading best model from {self.model_path}")
         self.model.load_state_dict(th.load(self.model_path))
         self.model = self.model.to(self.device)
 
-    def compute_ranking_metrics(self, filtering_labels=None, mode="test_subsumption"):
+    def compute_ranking_metrics(self, mode="test_subsumption"):
         if "test" in mode:
             self.load_best_model()
         
@@ -479,14 +402,13 @@ class GraphModel():
         
         self.model.eval()
         mean_rank = 0
-        ranks, filtered_ranks = dict(), dict()
+        ranks = dict()
         rank_vals = []
-        filtered_rank_vals = []
         if "test" in mode:
-            mrr, filtered_mrr = 0, 0
-            hits_at_1, fhits_at_1 = 0, 0
-            hits_at_5, fhits_at_5 = 0, 0
-            hits_at_10, fhits_at_10 = 0, 0
+            mrr = 0
+            hits_at_1 = 0
+            hits_at_5 = 0
+            hits_at_10 = 0
 
         dataloader = self.create_graph_dataloader(mode, batch_size=self.test_batch_size)
         with th.no_grad():
@@ -513,15 +435,7 @@ class GraphModel():
 
                     mean_rank /= dataloader.dataset_len
                     if "test" in mode:
-                        filt_labels = filtering_labels[head, :]
-                        filt_labels[tail] = 1
-                        filtered_preds = preds.cpu().numpy() * filt_labels
-                        filtered_preds = th.from_numpy(filtered_preds).to(self.device)
-                        filtered_orderings = th.argsort(filtered_preds, descending=True) 
-                        filtered_rank = th.where(filtered_orderings == tail)[0].item()
-                        filtered_rank_vals.append(filtered_rank)
                         mrr += 1/(rank+1)
-                        filtered_mrr += 1/(filtered_rank+1)
                     
                         if rank < 1:
                             hits_at_1 += 1
@@ -530,40 +444,23 @@ class GraphModel():
                         if rank < 10:
                             hits_at_10 += 1
 
-                        if filtered_rank < 1:
-                            fhits_at_1 += 1
-                        if filtered_rank < 5:
-                            fhits_at_5 += 1
-                        if filtered_rank < 10:
-                            fhits_at_10 += 1
-
-                        if filtered_rank not in filtered_ranks:
-                            filtered_ranks[filtered_rank] = 0
-                        filtered_ranks[filtered_rank] += 1
-
             if "test" in mode:
                 mrr /= dataloader.dataset_len
                 hits_at_1 /= dataloader.dataset_len
                 hits_at_5 /= dataloader.dataset_len
                 hits_at_10 /= dataloader.dataset_len
                 
-                filtered_mrr /= dataloader.dataset_len
-                fhits_at_1 /= dataloader.dataset_len
-                fhits_at_5 /= dataloader.dataset_len
-                fhits_at_10 /= dataloader.dataset_len
-                
                 raw_metrics = (mrr, hits_at_1, hits_at_5, hits_at_10)
-                filtered_metrics = (filtered_mrr, fhits_at_1, fhits_at_5, fhits_at_10)
-                print(f'MRR: {filtered_mrr:.3f}, Hits@1: {fhits_at_1:.3f}, Hits@5: {fhits_at_5:.3f}, Hits@10: {fhits_at_10:.3f}')
+                print(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
         if "test" in mode:
-            return raw_metrics, filtered_metrics
+            return raw_metrics 
         else:
             return mean_rank
                                                                             
-    def normal_forward(self, head_idxs, rel_idxs, tail_idxs, n_classes):
+    def normal_forward(self, head_idxs, rel_idxs, tail_idxs, len_tail_idxs):
         logits = self.model.predict((head_idxs, rel_idxs, tail_idxs))
         logger.debug(f"logits shape before reshape: {logits.shape}")
-        logits = logits.reshape(-1, n_classes)
+        logits = logits.reshape(-1, len_tail_idxs)
         logger.debug(f"logits shape after reshape: {logits.shape}")
         return logits
 
@@ -585,13 +482,12 @@ class GraphModel():
         
     def test(self):
         logger.info("Testing ontology completion...")
-        filtering_labels = self.get_filtering_labels()
         print('Membership:')
-        membership_metrics = self.compute_ranking_metrics(filtering_labels[1], "test_membership")       
+        membership_metrics = self.compute_ranking_metrics("test_membership")       
         print('Subsumption:')
-        subsumption_metrics = self.compute_ranking_metrics(filtering_labels[0], "test_subsumption")
+        subsumption_metrics = self.compute_ranking_metrics("test_subsumption")
         print('Link Prediction:')
-        link_prediction_metrics = self.compute_ranking_metrics(filtering_labels[2], "test_link_prediction")
+        link_prediction_metrics = self.compute_ranking_metrics("test_link_prediction")
         return subsumption_metrics, membership_metrics, link_prediction_metrics
     
     def save_embeddings_data(self):
@@ -605,7 +501,7 @@ class GraphModel():
         role_ids = []
         role = []
         for key, item in self.relation_to_id.items():
-            if key in ["http://subclassof", "http://type"] or key.startswith('http://benchmark/OWL2Bench#'):
+            if key in ["http://subclassof", "http://type"] or key.startswith('http://benchmark/OWL2Bench#'): # change here if you are using another ontology than OWL2Bench
                 role_ids.append(item)
                 role.append((key,item))
             

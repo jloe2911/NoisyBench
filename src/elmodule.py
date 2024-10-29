@@ -38,22 +38,22 @@ class ELModule(nn.Module):
 
     def abox_forward(self, indiv_idxs, mode):
         class_embed = self.module.class_center if self.module_name == "box2el" else self.module.class_embed
-        indiv_embed = self.indiv_embeddings(indiv_idxs)
         all_class_embed = class_embed.weight
+        indiv_embed = self.indiv_embeddings(indiv_idxs)
         all_indiv_embed = self.indiv_embeddings.weight
         if 'link_prediction' in mode:
-            score = torch.mm(indiv_embed, all_indiv_embed.t())
+            logits = torch.mm(indiv_embed, all_indiv_embed.t())
         else: 
-            score = torch.mm(indiv_embed, all_class_embed.t())
+            logits = torch.mm(indiv_embed, all_class_embed.t())
             if self.module_name == "elem":
                 rad_embed = self.module.class_rad.weight
                 rad_embed = torch.abs(rad_embed).view(1, -1)
-                score = score + rad_embed
+                logits = logits + rad_embed
             elif self.module_name in ["elbox", "box2el"]:
                 offset_embed = self.module.class_offset.weight
                 offset_embed = torch.abs(offset_embed).mean(dim=1).view(1, -1)
-                score = score + offset_embed
-        return score
+                logits  = logits + offset_embed
+        return logits 
 
 class ElModel(EmbeddingELModel):
     def __init__(self, dataset, module_name, dim, margin, batch_size, test_batch_size, epochs, learning_rate, device):
@@ -80,11 +80,10 @@ class ElModel(EmbeddingELModel):
             ontology = self.dataset.testing
         
         abox = []
-        property_assertions = []
-        
         for cls in self.dataset.classes:
             abox.extend(list(ontology.getClassAssertionAxioms(cls)))  
 
+        property_assertions = []
         object_properties = list(ontology.getObjectPropertiesInSignature())
         individuals = ontology.getIndividualsInSignature()
         for individual in individuals:
@@ -155,10 +154,10 @@ class ElModel(EmbeddingELModel):
 
             for batch_data in main_dl:
                 if main_dl_name == "abox":
-                    ind_idxs, labels, propery_labels = batch_data
+                    ind_idxs, labels, property_labels = batch_data
                     gci0_batch = next(el_dls["gci0"]).to(self.device)
                 elif main_dl_name == "gci0":
-                    ind_idxs, labels, propery_labels = next(abox_dl_train)
+                    ind_idxs, labels, property_labels = next(abox_dl_train)
                     gci0_batch = batch_data.to(self.device)
 
                 pos_gci0 = module.tbox_forward(gci0_batch, "gci0").mean() * el_dls_weights["gci0"]
@@ -185,10 +184,11 @@ class ElModel(EmbeddingELModel):
                 abox_loss = F.binary_cross_entropy_with_logits(abox_logits, labels.to(self.device))
 
                 abox_logits_lp = module.abox_forward(ind_idxs.to(self.device), 'link_prediction')
-                abox_loss_lp = F.binary_cross_entropy_with_logits(abox_logits_lp, propery_labels.to(self.device))
+                abox_loss_lp = F.binary_cross_entropy_with_logits(abox_logits_lp, property_labels.to(self.device))
 
-                loss = el_loss + abox_loss + abox_loss_lp
+                loss = el_loss + abox_loss #+ abox_loss_lp
 
+                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 train_el_loss += el_loss.item()
