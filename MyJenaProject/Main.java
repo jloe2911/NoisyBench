@@ -64,7 +64,7 @@ public class Main {
             String outputFileName = "output_family/" + inputFile.getName().replace(".ttl", "_inferred.ttl"); 
             try (FileOutputStream out = new FileOutputStream(outputFileName)) {
                 // Write the header for Turtle format
-                out.write("@prefix ns1: <http://benchmark/OWL2Bench#> .\n".getBytes());
+                out.write("@prefix ns1: <http://www.co-ode.org/roberts/family-tree.owl#> .\n".getBytes());
                 out.write("@prefix owl: <http://www.w3.org/2002/07/owl#> .\n".getBytes());
                 out.write("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n".getBytes());
                 out.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n".getBytes());

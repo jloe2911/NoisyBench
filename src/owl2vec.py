@@ -1,6 +1,7 @@
 import torch.optim as optim
 import torch 
 import torch.nn as nn
+
 from .graph_model import GraphModel
 
 class OWL2Vec(GraphModel):

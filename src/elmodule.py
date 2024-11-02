@@ -1,10 +1,10 @@
 import numpy as np
+from itertools import cycle
+
 import torch
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch import nn
-
-from itertools import cycle
 
 import mowl
 mowl.init_jvm('10g')
@@ -186,7 +186,7 @@ class ElModel(EmbeddingELModel):
                 abox_logits_lp = module.abox_forward(ind_idxs.to(self.device), 'link_prediction')
                 abox_loss_lp = F.binary_cross_entropy_with_logits(abox_logits_lp, property_labels.to(self.device))
 
-                loss = el_loss + abox_loss #+ abox_loss_lp
+                loss = el_loss + abox_loss + abox_loss_lp
 
                 optimizer.zero_grad()
                 loss.backward()

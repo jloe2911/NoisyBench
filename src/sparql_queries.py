@@ -151,13 +151,6 @@ def get_queries():
     
     return query1, query2, query3, query4, query5, query6, query7
 
-def add_links(g, node1_lst, node2_lst, edge_type_uri):
-  
-    for node1, node2 in zip(node1_lst,node2_lst):
-        g.add((node1,edge_type_uri,node2))
-
-    return g
-
 def print_result(g, query):
     qres = g.query(query)
     for row in qres:

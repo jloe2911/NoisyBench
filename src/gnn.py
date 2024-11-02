@@ -1,6 +1,8 @@
 import numpy as np
 import operator
 import random
+import math
+from collections import defaultdict
 
 import torch
 import torch.nn.functional as F
@@ -8,6 +10,7 @@ from torch.nn import Parameter
 
 from torch_geometric.nn import GAE, RGCNConv
 from torch_geometric.utils import negative_sampling
+from torch_geometric.data import HeteroData
 
 class RGCNEncoder(torch.nn.Module):
     def __init__(self, num_nodes, hidden_channels, num_relations):
@@ -91,6 +94,43 @@ class GNN():
             return mrr, mean_rank, median_rank, hits5, hits10
             
 ###HELPER FUNCIONS### 
+
+def get_data(g):
+    relations = list(set(g.predicates()))
+    nodes = list(set(g.subjects()).union(set(g.objects())))
+    relations_dict = {rel: i for i, rel in enumerate(relations)}
+    nodes_dict = {node: i for i, node in enumerate(nodes)}
+
+    edge_data = defaultdict(list)
+    for s, p, o in g.triples((None, None, None)):
+        src, dst, rel = nodes_dict[s], nodes_dict[o], relations_dict[p]
+        edge_data['edge_index'].append([src, dst])
+        edge_data['edge_type'].append(rel)
+    
+    data = HeteroData(edge_index=torch.tensor(edge_data['edge_index'], dtype=torch.long).t().contiguous(),
+                      edge_type=torch.tensor(edge_data['edge_type'], dtype=torch.long))
+    return data
+
+def split_edges(data, test_ratio = 0.2, val_ratio = 0):    
+    row, col = data.edge_index
+    edge_type = data.edge_type
+
+    n_v = int(math.floor(val_ratio * row.size(0)))
+    n_t = int(math.floor(test_ratio * row.size(0)))
+
+    perm = torch.randperm(row.size(0))
+    row, col, edge_type = row[perm], col[perm], edge_type[perm]
+
+    r, c, e = row[:n_v], col[:n_v], edge_type[:n_v]
+    data.val_pos_edge_index = torch.stack([r, c], dim=0)
+    data.val_edge_type = e
+    r, c, e = row[n_v:n_v + n_t], col[n_v:n_v + n_t], edge_type[n_v:n_v + n_t]
+    data.test_pos_edge_index = torch.stack([r, c], dim=0)
+    data.test_edge_type = e
+    r, c, e = row[n_v + n_t:], col[n_v + n_t:], edge_type[n_v + n_t:]
+    data.train_pos_edge_index = torch.stack([r, c], dim=0)
+    data.train_edge_type = e
+    return data
 
 def eval_hits(edge_index, tail_pred, output, max_num, device):    
     mrr = 0
