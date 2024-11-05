@@ -109,7 +109,7 @@ def get_data(g):
     
     data = HeteroData(edge_index=torch.tensor(edge_data['edge_index'], dtype=torch.long).t().contiguous(),
                       edge_type=torch.tensor(edge_data['edge_type'], dtype=torch.long))
-    return data
+    return data, nodes, nodes_dict, relations, relations_dict
 
 def split_edges(data, test_ratio = 0.2, val_ratio = 0):    
     row, col = data.edge_index

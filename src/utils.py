@@ -67,7 +67,7 @@ def get_subjects_objects_given_predicate(g, predicates, uri):
 
 def add_links(g, node1_lst, node2_lst, edge_type_uri):
     for node1, node2 in zip(node1_lst,node2_lst):
-        g.add((node1,edge_type_uri,node2))
+        g.add((node1, edge_type_uri, node2))
     return g
 
 def preprocess_ontology_el(ontology):
@@ -163,51 +163,51 @@ def get_experimets(dataset_name):
                         'format_' : None,
                         'add_noise': False},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_0.25',
+                        'file_name' : 'OWL2DL-1_gnn_0.25',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_0.25',
+                        'file_name' : 'OWL2DL-1_random_0.25',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.25',
+                        'file_name' : 'OWL2DL-1_disjoint_0.25',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_0.5',
+                        'file_name' : 'OWL2DL-1_gnn_0.5',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_0.5',
+                        'file_name' : 'OWL2DL-1_random_0.5',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.5',
+                        'file_name' : 'OWL2DL-1_disjoint_0.5',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_0.75',
+                        'file_name' : 'OWL2DL-1_gnn_0.75',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_0.75',
+                        'file_name' : 'OWL2DL-1_random_0.75',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_0.75',
+                        'file_name' : 'OWL2DL-1_disjoint_0.75',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_gnn_1.0',
+                        'file_name' : 'OWL2DL-1_gnn_1.0',
                         'format_' : None,
                         'add_noise': True},                 
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_random_1.0',
+                        'file_name' : 'OWL2DL-1_random_1.0',
                         'format_' : None,
                         'add_noise': True},
                        {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_noisy_disjoint_1.0',
+                        'file_name' : 'OWL2DL-1_disjoint_1.0',
                         'format_' : None,
                         'add_noise': True}]
         
@@ -220,21 +220,21 @@ def get_experimets(dataset_name):
 
     return experiments
 
-def save_results(metrics_subsumption, metrics_membership, metrics_link_prediction, results_dir):
+def save_results(metrics_subsumption, metrics_membership, results_dir): # , metrics_link_prediction
     s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10 = metrics_subsumption
     m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10 = metrics_membership
-    lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10 = metrics_link_prediction
+    # lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10 = metrics_link_prediction
     with open(results_dir, 'w') as f: 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line1 = [m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10]
         line2 = [s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10]
-        line3 = [lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10]
+        # line3 = [lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10]
         line = f"Results as of {timestamp}:\n"
         line += "Membership:\n"
         line += " & " + " & ".join([f"{x:.3f}" for x in line1]) + "\n"
         line += "Subsumption:\n"
         line += " & " + " & ".join([f"{x:.3f}" for x in line2]) + "\n"
-        line += "Link Prediction:\n"
-        line += " & " + " & ".join([f"{x:.3f}" for x in line3]) + "\n"
-        f.write(line)
+        # line += "Link Prediction:\n"
+        # line += " & " + " & ".join([f"{x:.3f}" for x in line3]) + "\n"
+        # f.write(line)
     print("Results saved to ", results_dir)

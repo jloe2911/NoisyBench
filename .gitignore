@@ -1,14 +1,7 @@
 _draft
 datasets
 models
-MyJenaProject/input
-MyJenaProject/input_filtered
-MyJenaProject/input_toy_example
-MyJenaProject/input_family
-MyJenaProject/lib
-MyJenaProject/output
-MyJenaProject/output_filtered
-MyJenaProject/output_toy_example
-MyJenaProject/output_family
+MyJenaProject
 check.ipynb
 toy_example.ipynb
+PrepareGraphs_LUBM.ipynb

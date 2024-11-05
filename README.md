@@ -14,8 +14,8 @@ pip install -r requirements.txt
 
 1. `GenerateGraphs.ipynb`: 
 For each resource $r$, a small graph $g$ is created using the following command: ```DESCRIBE <r>```. This command retrieves all statements related to the resource $r$ for inference.
-2. `MyJenaProject`: 
-Applies Jena to graphs $g_1$, $g_2$, ..., $g_R$, where $R$ represents the set of resources from the original ontology. This generates inference graphs $i_1$, $i_2$, ..., $i_R$. The idea is that each subgraph $g$ and its corresponding inference graph $i$ form a feature-label pair $(g, i)$.
+2. `Owlready2-example` or `MyJenaProject`: 
+Applies HermiT to graphs $g_1$, $g_2$, ..., $g_R$, where $R$ represents the set of resources from the original ontology. This generates inference graphs $i_1$, $i_2$, ..., $i_R$. The idea is that each subgraph $g$ and its corresponding inference graph $i$ form a feature-label pair $(g, i)$.
 3. `PrepareGraphs.ipynb`: 
 To construct the training, test and validation sets, each $(g, i)$ pair is assigned to one of these sets using a stratified splitting technique. Specifically, the training set $G_{\text{train}}$ will consist of a collection of $(g, i)$ graphs, with a similar process followed for the test and validation sets.
 4. `NoiseGeneratation.ipynb`: 

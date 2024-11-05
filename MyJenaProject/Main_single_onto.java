@@ -14,7 +14,7 @@ import java.io.IOException;
 public class Main_single_onto {
     public static void main(String[] args) {
         // Specify the ontology file (you can modify the path)
-        File ontologyFile = new File("input/P2.owl"); // Change to your file path
+        File ontologyFile = new File("input_toy_example/U0WC0D2AP3.ttl"); // Change to your file path
 
         // Check if the file exists
         if (ontologyFile.exists()) {
@@ -37,12 +37,12 @@ public class Main_single_onto {
             InfModel infModel = ModelFactory.createInfModel(reasoner, model);
 
             // Specify the output directory
-            String outputDirectory = "output/"; // Change this to your desired output folder
+            String outputDirectory = "output_toy_example/"; // Change this to your desired output folder
             // Create the output directory if it doesn't exist
             new File(outputDirectory).mkdirs();
 
             // Create a new OWL file to store inferences
-            String outputFileName = outputDirectory + inputFile.getName().replace(".owl", "_inferred.owl");
+            String outputFileName = outputDirectory + inputFile.getName().replace(".ttl", "_inferred.ttl");
             try (FileOutputStream out = new FileOutputStream(outputFileName)) {
                 infModel.write(out, "RDF/XML");
                 System.out.println("Inferences written to: " + outputFileName);

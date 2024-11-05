@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import pickle as pkl
 
 from pykeen.triples import TriplesFactory
@@ -53,12 +52,12 @@ class GraphModel():
         self._triples_factory = None
         
         self._train_graph = None
-        self._valid_subsumption_graph = None
-        self._valid_membership_graph = None
-        self._valid_link_prediction_graph = None
+        # self._valid_subsumption_graph = None
+        # self._valid_membership_graph = None
+        # self._valid_link_prediction_graph = None
         self._test_subsumption_graph = None
         self._test_membership_graph = None
-        self._test_link_prediction_graph = None
+        # self._test_link_prediction_graph = None
 
         self._model_path = None
         self._node_to_id = None
@@ -74,23 +73,23 @@ class GraphModel():
                 
         self.projector = OWL2VecStarProjector(bidirectional_taxonomy=True)
         
-        self.train_path = f'datasets/bin/{self.file_name}_train.owl' # we add noise to train  
-        self.valid_path = f'datasets/bin/{self.dataset_name}_val.owl'
-        self.test_path = f'datasets/bin/{self.dataset_name}_test.owl'
+        self.train_path = f'datasets/{self.file_name}_train.owl' # we add noise to training set 
+        # self.valid_path = f'datasets/{self.dataset_name}_val.owl'
+        self.test_path = f'datasets/{self.dataset_name}_test.owl'
 
         self._train_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_train.edgelist'
-        self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'
+        #  self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'
         self._test_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_subsumption.edgelist'
-        self._valid_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_membership.edgelist'
+        # self._valid_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_membership.edgelist'
         self._test_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_membership.edgelist'
-        self._valid_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_link_prediction.edgelist'
-        self._test_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_link_prediction.edgelist'
+        # self._valid_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_link_prediction.edgelist'
+        # self._test_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_link_prediction.edgelist'
 
         self._classes_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_classes.tsv'
         self._object_properties_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_properties.tsv' 
         self._individuals_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_individuals.tsv' 
         
-        self.dataset = PathDataset(self.train_path, validation_path = self.valid_path, testing_path = self.test_path)
+        self.dataset = PathDataset(self.train_path, testing_path = self.test_path) # validation_path = self.valid_path, 
         
         self.model = KGEModule(kge_model,
                                triples_factory=self.triples_factory,
@@ -101,8 +100,8 @@ class GraphModel():
         logger.info(f"Generating Graph {path}...")
         if mode == "train":
             edges = self.projector.project(self.dataset.ontology)
-        elif "valid" in mode:
-            edges = self.projector.project(self.dataset.validation)
+        # elif "valid" in mode:
+        #     edges = self.projector.project(self.dataset.validation)
         elif "test" in mode:
             edges = self.projector.project(self.dataset.testing)
 
@@ -117,9 +116,9 @@ class GraphModel():
         elif "membership" in mode:
             graph = graph[graph["relation"] == "http://type"]
             graph.to_csv(path, sep="\t", header=None, index=False)
-        elif "link_prediction" in mode:
-            graph = graph[graph['relation'].str.startswith('http://benchmark/OWL2Bench#')] # change here if you are using another ontology than OWL2Bench
-            graph.to_csv(path, sep="\t", header=None, index=False)
+        # elif "link_prediction" in mode:
+        #     graph = graph[graph['relation'].str.startswith('https://kracr.iiitd.edu.in/OWL2Bench#')] # change here if you are using another ontology than OWL2Bench
+        #     graph.to_csv(path, sep="\t", header=None, index=False)
 
         graph = pd.read_csv(path, sep="\t", header=None)
         graph.columns = ["head", "relation", "tail"]
@@ -136,29 +135,29 @@ class GraphModel():
         self._train_graph = self._load_graph(self._train_graph_path, mode="train")
         return self._train_graph
 
-    @property
-    def valid_subsumption_graph(self):
-        if self._valid_subsumption_graph is not None:
-            return self._valid_subsumption_graph
+    # @property
+    # def valid_subsumption_graph(self):
+    #     if self._valid_subsumption_graph is not None:
+    #         return self._valid_subsumption_graph
 
-        self._valid_subsumption_graph = self._load_graph(self._valid_subsumption_graph_path, mode="valid_subsumption")
-        return self._valid_subsumption_graph
+    #     self._valid_subsumption_graph = self._load_graph(self._valid_subsumption_graph_path, mode="valid_subsumption")
+    #     return self._valid_subsumption_graph
                                                             
-    @property
-    def valid_membership_graph(self):
-        if self._valid_membership_graph is not None:
-            return self._valid_membership_graph
+    # @property
+    # def valid_membership_graph(self):
+    #     if self._valid_membership_graph is not None:
+    #         return self._valid_membership_graph
 
-        self._valid_membership_graph = self._load_graph(self._valid_membership_graph_path, mode="valid_membership")
-        return self._valid_membership_graph
+    #     self._valid_membership_graph = self._load_graph(self._valid_membership_graph_path, mode="valid_membership")
+    #     return self._valid_membership_graph
     
-    @property
-    def valid_link_prediction_graph(self):
-        if self._valid_link_prediction_graph is not None:
-            return self._valid_link_prediction_graph
+    # @property
+    # def valid_link_prediction_graph(self):
+    #     if self._valid_link_prediction_graph is not None:
+    #         return self._valid_link_prediction_graph
 
-        self._valid_link_prediction_graph = self._load_graph(self._valid_link_prediction_graph_path, mode="valid_link_prediction")
-        return self._valid_link_prediction_graph
+    #     self._valid_link_prediction_graph = self._load_graph(self._valid_link_prediction_graph_path, mode="valid_link_prediction")
+    #     return self._valid_link_prediction_graph
 
     @property
     def test_subsumption_graph(self):
@@ -176,13 +175,13 @@ class GraphModel():
         self._test_membership_graph = self._load_graph(self._test_membership_graph_path, mode="test_membership")
         return self._test_membership_graph
 
-    @property
-    def test_link_prediction_graph(self):
-        if self._test_link_prediction_graph is not None:
-            return self._test_link_prediction_graph
+    # @property
+    # def test_link_prediction_graph(self):
+    #     if self._test_link_prediction_graph is not None:
+    #         return self._test_link_prediction_graph
 
-        self._test_link_prediction_graph = self._load_graph(self._test_link_prediction_graph_path, mode="test_link_prediction")
-        return self._test_link_prediction_graph
+    #     self._test_link_prediction_graph = self._load_graph(self._test_link_prediction_graph_path, mode="test_link_prediction")
+    #     return self._test_link_prediction_graph
     
     @property
     def classes(self):
@@ -191,7 +190,7 @@ class GraphModel():
 
         logger.info(f"Generating Classes...")
         classes = set(self.dataset.ontology.getClassesInSignature())
-        classes |= set(self.dataset.validation.getClassesInSignature())
+        # classes |= set(self.dataset.validation.getClassesInSignature())
         classes |= set(self.dataset.testing.getClassesInSignature())
         classes = sorted(list(classes))
         classes = [str(c.toStringID()) for c in classes]
@@ -210,7 +209,7 @@ class GraphModel():
 
         logger.info(f"Generating Properties...")
         properties = set(self.dataset.ontology.getObjectPropertiesInSignature())
-        properties |= set(self.dataset.validation.getObjectPropertiesInSignature())
+        # properties |= set(self.dataset.validation.getObjectPropertiesInSignature())
         properties |= set(self.dataset.testing.getObjectPropertiesInSignature())
         properties = sorted(list(properties))
         properties = [str(p.toStringID()) for p in properties]
@@ -229,7 +228,7 @@ class GraphModel():
 
         logger.info(f"Generating Individuals...")
         individuals = set(self.dataset.ontology.getIndividualsInSignature())
-        individuals |= set(self.dataset.validation.getIndividualsInSignature())
+        # individuals |= set(self.dataset.validation.getIndividualsInSignature())
         individuals |= set(self.dataset.testing.getIndividualsInSignature())
         individuals = sorted(list(individuals))
         individuals = [str(i.toStringID()) for i in individuals]
@@ -255,12 +254,12 @@ class GraphModel():
             return self._node_to_id
 
         graph_classes = set(self.train_graph["head"].unique()) | set(self.train_graph["tail"].unique())
-        graph_classes |= set(self.valid_subsumption_graph["head"].unique()) | set(self.valid_subsumption_graph["tail"].unique())
-        graph_classes |= set(self.valid_membership_graph["head"].unique()) | set(self.valid_membership_graph["tail"].unique())
-        graph_classes |= set(self.valid_link_prediction_graph["head"].unique()) | set(self.valid_link_prediction_graph["tail"].unique())
+        # graph_classes |= set(self.valid_subsumption_graph["head"].unique()) | set(self.valid_subsumption_graph["tail"].unique())
+        # graph_classes |= set(self.valid_membership_graph["head"].unique()) | set(self.valid_membership_graph["tail"].unique())
+        # graph_classes |= set(self.valid_link_prediction_graph["head"].unique()) | set(self.valid_link_prediction_graph["tail"].unique())
         graph_classes |= set(self.test_subsumption_graph["head"].unique()) | set(self.test_subsumption_graph["tail"].unique())
         graph_classes |= set(self.test_membership_graph["head"].unique()) | set(self.test_membership_graph["tail"].unique())
-        graph_classes |= set(self.test_link_prediction_graph["head"].unique()) | set(self.test_link_prediction_graph["tail"].unique())
+        # graph_classes |= set(self.test_link_prediction_graph["head"].unique()) | set(self.test_link_prediction_graph["tail"].unique())
         
         bot = "http://www.w3.org/2002/07/owl#Nothing"
         top = "http://www.w3.org/2002/07/owl#Thing"
@@ -351,18 +350,18 @@ class GraphModel():
     def create_graph_dataloader(self, mode="train", batch_size=None):        
         if mode == "train":
             graph = self.train_graph
-        elif mode == "valid_subsumption":
-            graph = self.valid_subsumption_graph
-        elif mode == "valid_membership":
-            graph = self.valid_membership_graph
-        elif mode == "valid_link_prediction":
-            graph = self.valid_link_prediction_graph
+        # elif mode == "valid_subsumption":
+        #     graph = self.valid_subsumption_graph
+        # elif mode == "valid_membership":
+        #     graph = self.valid_membership_graph
+        # elif mode == "valid_link_prediction":
+        #     graph = self.valid_link_prediction_graph
         elif mode == "test_subsumption":
             graph = self.test_subsumption_graph
         elif mode == "test_membership":
             graph = self.test_membership_graph
-        elif mode == "test_link_prediction":
-            graph = self.test_link_prediction_graph
+        # elif mode == "test_link_prediction":
+        #     graph = self.test_link_prediction_graph
         
         heads = [self.node_to_id[h] for h in graph["head"]]
         rels = [self.relation_to_id[r] for r in graph["relation"]]
@@ -396,9 +395,9 @@ class GraphModel():
         elif "membership" in mode:
             all_tail_ids = self.classes_ids.to(self.device)
             all_head_ids = self.individuals_ids.to(self.device)
-        elif "link_prediction" in mode:
-            all_tail_ids = self.individuals_ids.to(self.device)
-            all_head_ids = self.individuals_ids.to(self.device)
+        # elif "link_prediction" in mode:
+        #     all_tail_ids = self.individuals_ids.to(self.device)
+        #     all_head_ids = self.individuals_ids.to(self.device)
         
         self.model.eval()
         mean_rank = 0
@@ -486,9 +485,9 @@ class GraphModel():
         membership_metrics = self.compute_ranking_metrics("test_membership")       
         print('Subsumption:')
         subsumption_metrics = self.compute_ranking_metrics("test_subsumption")
-        print('Link Prediction:')
-        link_prediction_metrics = self.compute_ranking_metrics("test_link_prediction")
-        return subsumption_metrics, membership_metrics, link_prediction_metrics
+        # print('Link Prediction:')
+        # link_prediction_metrics = self.compute_ranking_metrics("test_link_prediction")
+        return subsumption_metrics, membership_metrics # , link_prediction_metrics
     
     def save_embeddings_data(self):
         out_class_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_class_embeddings.pkl"
@@ -501,7 +500,7 @@ class GraphModel():
         role_ids = []
         role = []
         for key, item in self.relation_to_id.items():
-            if key in ["http://subclassof", "http://type"] or key.startswith('http://benchmark/OWL2Bench#'): # change here if you are using another ontology than OWL2Bench
+            if key in ["http://subclassof", "http://type"] or key.startswith('https://kracr.iiitd.edu.in/OWL2Bench#'): # change here if you are using another ontology than OWL2Bench
                 role_ids.append(item)
                 role.append((key,item))
             
