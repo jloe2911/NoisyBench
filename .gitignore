@@ -1,7 +1,9 @@
 _draft
 datasets
 models
-MyJenaProject
+MyJenaProject/input_toy_example
+MyJenaProject/lib
+MyJenaProject/output_toy_example
 Owlready2-example
 check.ipynb
 toy_example.ipynb
