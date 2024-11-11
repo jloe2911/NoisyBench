@@ -13,14 +13,13 @@ pip install -r requirements.txt
 ## Quick Tour
 
 1. `GenerateGraphs.ipynb`: 
-For each resource $r$, a small graph $g$ is created using the following command: ```DESCRIBE <r>```. This command retrieves all statements related to the resource $r$ for inference.
-2. `Owlready2-example` or `MyJenaProject`: 
-Applies HermiT to graphs $g_1$, $g_2$, ..., $g_R$, where $R$ represents the set of resources from the original ontology. This generates inference graphs $i_1$, $i_2$, ..., $i_R$. The idea is that each subgraph $g$ and its corresponding inference graph $i$ form a feature-label pair $(g, i)$.
+For each resource $r$, a small graph $g$ is created that includes all triples that are two hops away. We want to get all statements related to the resource $r$ within 2-hops away for inference.
+2. `Owlready2-example`: 
+Applies Pellet to graphs $g_1$, $g_2$, ..., $g_R$, where $R$ represents the set of resources from the original ontology. This generates inference graphs $i_1$, $i_2$, ..., $i_R$. The idea is that each subgraph $g$ and its corresponding inference graph $i$ form a feature-label pair $(g, i)$.
 3. `PrepareGraphs.ipynb`: 
 To construct the training, test and validation sets, each $(g, i)$ pair is assigned to one of these sets using a stratified splitting technique. Specifically, the training set $G_{\text{train}}$ will consist of a collection of $(g, i)$ graphs, with a similar process followed for the test and validation sets.
 4. `NoiseGeneratation.ipynb`: 
 Generates ABox noise in an ontology: a method based on disjoint axioms, a Graph Neural Network (GNN) approach and a random-based approach. For each noise generation method, we introduced a parameter $k$, where $k$ indicates the percentage of noise to be added in relation to the total number of triples of the original ontology.
-We use OWL2DL-1 ontology that can be found [here](https://drive.google.com/drive/folders/1HYURRLaQkLK8cQwV-UBNKK4_Zur2nU68?usp=drive_link) and should be added to `datasets/{dataset_name}.owl`.
-The notebook outputs noisy datasets stored in `datasets/noise/{dataset_name}_noisy_{noise_generation_method}_{noise_percentage}.owl`. The noisy datasets can also be found [here](https://drive.google.com/drive/folders/14TzofCSdxgvXEA5aJ7fhppK8EuN5k2aH?usp=drive_link).
+We use OWL2DL-1 ontology that can be found [here](https://drive.google.com/drive/folders/1HYURRLaQkLK8cQwV-UBNKK4_Zur2nU68?usp=drive_link) and should be added to `datasets/{dataset_name}.owl`. The notebook outputs noisy datasets stored in `datasets/noise/{dataset_name}_{noise_generation_method}_{noise_percentage}.owl`. The noisy datasets can also be found [here](https://drive.google.com/drive/folders/14TzofCSdxgvXEA5aJ7fhppK8EuN5k2aH?usp=drive_link).
 5. `OWL2Vec.ipynb`: OWL2Vec*.
 6. `EL.ipynb`: Box2EL.

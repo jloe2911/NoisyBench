@@ -1,5 +1,5 @@
 import rdflib
-from rdflib import Literal, RDF
+from rdflib import Literal, RDF, OWL
 from owlready2 import AllDisjoint
 
 from src.utils import *
@@ -71,12 +71,15 @@ def add_noise_disjoint_properties(g, g_no_noise, max_triples, all_disjoint_prope
     return noisy_g_disjoint
 
 def get_possible_predicates(g_no_noise):
-    relations = list(set(g_no_noise.predicates()))
 
-    literal_predicates = set()
-    for _, pred, obj in g_no_noise:
-        if isinstance(obj, Literal):
-            literal_predicates.add(pred)
-
-    possible_predicates = [str(rel) for rel in relations if not rel.startswith('http://www.w3.org/') and not rel in literal_predicates]
+    individual_predicates = set()
+    
+    for subj, pred, obj in g_no_noise:
+        if (subj, RDF.type, OWL.NamedIndividual) in g_no_noise and \
+           (obj, RDF.type, OWL.NamedIndividual) in g_no_noise and \
+           not isinstance(obj, Literal):
+            individual_predicates.add(pred)
+    
+    possible_predicates = [str(pred) for pred in individual_predicates if not str(pred).startswith('http://www.w3.org/')]
+    
     return possible_predicates
