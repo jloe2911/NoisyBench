@@ -33,9 +33,10 @@ def add_noise_disjoint_classes(g_no_noise, max_triples, all_disjoint_classes, ur
     _, individual_names, _ = get_individuals(g_no_noise)
     max_combinations = len(individual_names) * sum(len(class_set) * (len(class_set) - 1) // 2 for class_set in all_disjoint_classes)
     if max_triples > max_combinations:
-        needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
-        individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
-        print('We created new individuals...')
+        print('not enough disjoint classes')
+    #     needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
+    #     individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
+    #     print('We created new individuals...')
 
     num_triples = 0
     while num_triples < max_triples:
@@ -53,9 +54,10 @@ def add_noise_disjoint_properties(g, g_no_noise, max_triples, all_disjoint_prope
     _, individual_names, _ = get_individuals(g_no_noise)
     max_combinations = len(individual_names) * sum(len(class_set) * (len(class_set) - 1) // 2 for class_set in all_disjoint_properties)
     if max_triples > max_combinations:
-        needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
-        individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
-        print('We created new individuals...')
+        print('not enough disjoint classes')
+    #     needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
+    #     individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
+    #     print('We created new individuals...')
 
     num_triples = 0
     while num_triples < max_triples:
@@ -83,3 +85,81 @@ def get_possible_predicates(g_no_noise):
     possible_predicates = [str(pred) for pred in individual_predicates if not str(pred).startswith('http://www.w3.org/')]
     
     return possible_predicates
+
+def get_non_domain_individuals(g_no_noise, domain_range):
+    non_domain_individuals = []
+    for subj in g_no_noise.subjects(RDF.type, OWL.NamedIndividual):
+        for _, _, obj in g_no_noise.triples((subj, RDF.type, None)):
+            if obj != OWL.NamedIndividual and obj != domain_range:
+                non_domain_individuals.append(subj)
+    return non_domain_individuals
+
+def violate_domain(g_no_noise, range_domain_info, non_range_domain_individuals_dict, k):    
+    violated_g = rdflib.Graph()
+    properties = list(range_domain_info.keys())  
+    count = 0
+    
+    property_triples = {}
+    for prop, info in range_domain_info.items():
+        if "domain" in info:
+            domain = URIRef(info["domain"])
+            predicate = URIRef(prop)
+            existing_triples = list(g_no_noise.triples((None, predicate, None)))
+            property_triples[prop] = (domain, existing_triples)
+    
+    if not property_triples:
+        return violated_g
+
+    while count < k:
+        prop = random.choice(properties)
+        domain, existing_triples = property_triples.get(prop, (None, []))
+        
+        if not existing_triples:
+            continue
+        
+        non_domain_individuals = non_range_domain_individuals_dict[domain]
+        
+        if not non_domain_individuals:
+            continue
+
+        _, pred, obj = random.choice(existing_triples)
+        violating_subject = random.choice(non_domain_individuals)
+        violated_g.add((violating_subject, pred, obj))
+        count += 1
+
+    return violated_g
+
+def violate_range(g_no_noise, range_domain_info, non_range_domain_individuals_dict, k):    
+    violated_g = rdflib.Graph()
+    properties = list(range_domain_info.keys())  
+    count = 0
+
+    property_triples = {}
+    for prop, info in range_domain_info.items():
+        if "range" in info:
+            range_ = URIRef(info["range"])
+            predicate = URIRef(prop)
+            existing_triples = list(g_no_noise.triples((None, predicate, None)))
+            property_triples[prop] = (range_, existing_triples)
+    
+    if not property_triples:
+        return violated_g
+
+    while count < k:
+        prop = random.choice(properties)
+        range_, existing_triples = property_triples.get(prop, (None, []))
+        
+        if not existing_triples:
+            continue
+
+        non_range_individuals = non_range_domain_individuals_dict[range_]
+        
+        if not non_range_individuals:
+            continue
+
+        subj, pred, _ = random.choice(existing_triples)
+        violating_object = random.choice(non_range_individuals)
+        violated_g.add((subj, pred, violating_object))
+        count += 1
+
+    return violated_g

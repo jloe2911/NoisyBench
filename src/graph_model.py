@@ -131,7 +131,7 @@ class GraphModel():
             graph.to_csv(path, sep="\t", header=None, index=False)
         elif "link_prediction" in mode:
             g_test = rdflib.Graph()
-            g_test.parse(self.test_path, format='turtle')
+            g_test.parse(self.test_path)
             _, individuals, _ = get_individuals(g_test)
             individuals = [str(x) for x in individuals]
             possible_predicates = get_possible_predicates(g_test)
@@ -510,7 +510,7 @@ class GraphModel():
     
     def save_embeddings_data(self):
         g_test = rdflib.Graph()
-        g_test.parse(self.test_path, format='turtle')
+        g_test.parse(self.test_path)
         possible_predicates = get_possible_predicates(g_test)
         
         out_class_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_class_embeddings.pkl"
