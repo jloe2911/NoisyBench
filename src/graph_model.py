@@ -24,6 +24,7 @@ from src.kge import *
 class GraphModel():
     def __init__(self,
                  file_name,
+                 iteration,
                  dataset_name,
                  kge_model,
                  emb_dim,
@@ -40,6 +41,7 @@ class GraphModel():
                  ):
 
         self.file_name = file_name
+        self.iteration = iteration
         self.dataset_name = dataset_name
         self.kge_model = kge_model
         self.emb_dim = emb_dim
@@ -264,7 +266,7 @@ class GraphModel():
         if self._model_path is not None:
             return self._model_path
 
-        self._model_path = f"models/owl2vec_{self.file_name}.model.pt"
+        self._model_path = f"models/owl2vec_{self.file_name}_{self.iteration}.model.pt"
         return self._model_path
 
     @property
