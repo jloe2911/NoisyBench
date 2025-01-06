@@ -44,7 +44,7 @@ def process_filtered_graph(input_graph_path, dataset_name, object_properties):
         return f"Error processing {input_graph_path}: {e}"
 
 if __name__ == "__main__":
-    dataset_name = 'OWL2DL-1'  
+    # dataset_name = 'OWL2DL-1'  
     dataset_name = 'family'  
     ontology = get_ontology(f'datasets/{dataset_name}.owl').load()
     object_properties = list(ontology.object_properties())

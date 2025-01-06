@@ -1,76 +1,57 @@
 import rdflib
-from rdflib import Literal, RDF, OWL
+from rdflib import Literal, RDF, OWL, Namespace
 from owlready2 import AllDisjoint
 
 from src.utils import *
 from src.gnn import *
 from src.sparql_queries import *
 
-def get_disjoint_classes(ontology):
-    disjoint_classes = []
-    for disjoint in ontology.disjoint_classes():
-        if isinstance(disjoint, AllDisjoint):
-            disjoint_classes.append(disjoint)
+from rdflib import Graph, Namespace, RDF, OWL
 
-    all_disjoint_classes = []
-    for disjoint in disjoint_classes:
-        all_disjoint_classes.append([cls.name for cls in disjoint.entities])
-    return all_disjoint_classes
+def get_disjoint_classes(g):
+    """
+    Extract disjoint classes from an ontology and represent them as a dictionary.
 
-def get_disjoint_properties(ontology):    
-    disjoint_properties = []
-    for disjoint in ontology.disjoint_properties():
-        if isinstance(disjoint, AllDisjoint):
-            disjoint_properties.append(disjoint)
+    Args:
+        ontology_path (str): Path to the ontology file.
 
-    all_disjoint_properties = []
-    for disjoint in disjoint_properties:
-        all_disjoint_properties.append([cls.name for cls in disjoint.entities])
-    return all_disjoint_properties
+    Returns:
+        dict: Dictionary where keys are classes and values are lists of disjoint classes.
+    """
 
-def add_noise_disjoint_classes(g_no_noise, max_triples, all_disjoint_classes, uri):
-    noisy_g_disjoint = rdflib.Graph()
-    _, individual_names, _ = get_individuals(g_no_noise)
-    max_combinations = len(individual_names) * sum(len(class_set) * (len(class_set) - 1) // 2 for class_set in all_disjoint_classes)
-    if max_triples > max_combinations:
-        print('not enough disjoint classes')
-    #     needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
-    #     individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
-    #     print('We created new individuals...')
+    # Define OWL namespace
+    OWL_NS = Namespace("http://www.w3.org/2002/07/owl#")
 
-    num_triples = 0
-    while num_triples < max_triples:
-        individual = random.choice(individual_names)
-        selected_class_set = random.choice(all_disjoint_classes)
-        selected_classes = random.sample(selected_class_set, 2)
-        triples = {(individual, RDF.type, URIRef(uri + cls)) for cls in selected_classes}
-        for triple in triples:
-            noisy_g_disjoint.add(triple)
-            num_triples +=1
-    return noisy_g_disjoint
+    # Find disjoint classes
+    disjoint_classes = {}
+    for s, p, o in g.triples((None, OWL_NS.disjointWith, None)):
+        if (s, RDF.type, OWL_NS.Class) in g and (o, RDF.type, OWL_NS.Class) in g:
+            disjoint_classes.setdefault(s, []).append(o)
+            disjoint_classes.setdefault(o, []).append(s)  # To ensure symmetry
 
-def add_noise_disjoint_properties(g, g_no_noise, max_triples, all_disjoint_properties, uri):
-    noisy_g_disjoint = rdflib.Graph()
-    _, individual_names, _ = get_individuals(g_no_noise)
-    max_combinations = len(individual_names) * sum(len(class_set) * (len(class_set) - 1) // 2 for class_set in all_disjoint_properties)
-    if max_triples > max_combinations:
-        print('not enough disjoint classes')
-    #     needed_individuals = (max_triples - max_combinations) // (max_combinations // len(individual_names)) + 1
-    #     individual_names.extend([URIRef(uri + f"I_{i}") for i in range(1, needed_individuals + 1)])
-    #     print('We created new individuals...')
+    return {k: [v for v in values] for k, values in disjoint_classes.items()}
 
-    num_triples = 0
-    while num_triples < max_triples:
-        individual = random.choice(individual_names)
-        selected_property_set = random.choice(all_disjoint_properties)
-        selected_properties = random.sample(selected_property_set, 2)
-        _, objects = get_subjects_objects_given_predicate(g, selected_properties, uri)
-        selected_object = random.choice(objects)
-        triples = {(individual, URIRef(uri + p), URIRef(uri + selected_object)) for p in selected_properties}
-        for triple in triples:
-            noisy_g_disjoint.add(triple)
-            num_triples +=1
-    return noisy_g_disjoint
+def get_disjoint_properties(g):
+    """
+    Extract disjoint properties from an ontology and represent them as a dictionary.
+
+    Args:
+        ontology_path (str): Path to the ontology file.
+
+    Returns:
+        dict: Dictionary where keys are properties and values are lists of disjoint properties.
+    """
+
+    # Define OWL namespace
+    OWL_NS = Namespace("http://www.w3.org/2002/07/owl#")
+
+    # Find disjoint properties
+    disjoint_properties = {}
+    for s, p, o in g.triples((None, OWL_NS.propertyDisjointWith, None)):
+        disjoint_properties.setdefault(s, []).append(o)
+        disjoint_properties.setdefault(o, []).append(s)  # Ensure symmetry
+
+    return {k: [v for v in values] for k, values in disjoint_properties.items()}
 
 def get_possible_predicates(g_no_noise):
 
@@ -86,80 +67,90 @@ def get_possible_predicates(g_no_noise):
     
     return possible_predicates
 
-def get_non_domain_individuals(g_no_noise, domain_range):
-    non_domain_individuals = []
-    for subj in g_no_noise.subjects(RDF.type, OWL.NamedIndividual):
-        for _, _, obj in g_no_noise.triples((subj, RDF.type, None)):
-            if obj != OWL.NamedIndividual and obj != domain_range:
-                non_domain_individuals.append(subj)
-    return non_domain_individuals
-
-def violate_domain(g_no_noise, range_domain_info, non_range_domain_individuals_dict, k):    
-    violated_g = rdflib.Graph()
-    properties = list(range_domain_info.keys())  
-    count = 0
+def remove_triples(graph):
     
-    property_triples = {}
-    for prop, info in range_domain_info.items():
-        if "domain" in info:
-            domain = URIRef(info["domain"])
-            predicate = URIRef(prop)
-            existing_triples = list(g_no_noise.triples((None, predicate, None)))
-            property_triples[prop] = (domain, existing_triples)
-    
-    if not property_triples:
-        return violated_g
+    namespace_to_filter = Namespace("http://www.w3.org/2002/07/owl")
+    namespace_to_filter2 = Namespace("http://www.w3.org/2000/01/rdf-schema")
 
-    while count < k:
-        prop = random.choice(properties)
-        domain, existing_triples = property_triples.get(prop, (None, []))
-        
-        if not existing_triples:
-            continue
-        
-        non_domain_individuals = non_range_domain_individuals_dict[domain]
-        
-        if not non_domain_individuals:
-            continue
+    # Find triples to remove
+    triples_to_remove = []
+    for s, p, o in graph:
+        if str(o).startswith(str(namespace_to_filter)) or str(o).startswith(str(namespace_to_filter2)):
+            triples_to_remove.append((s, p, o))
 
-        _, pred, obj = random.choice(existing_triples)
-        violating_subject = random.choice(non_domain_individuals)
-        violated_g.add((violating_subject, pred, obj))
-        count += 1
+    # Remove the triples
+    for triple in triples_to_remove:
+        graph.remove(triple)
 
-    return violated_g
+    return graph
 
-def violate_range(g_no_noise, range_domain_info, non_range_domain_individuals_dict, k):    
-    violated_g = rdflib.Graph()
-    properties = list(range_domain_info.keys())  
-    count = 0
+def find_instances(graph, class_uri):
+    """
+    Find all instances of a given class in the graph.
+    """
+    return {s for s, _, o in graph.triples((None, rdflib.RDF.type, class_uri))}
 
-    property_triples = {}
-    for prop, info in range_domain_info.items():
-        if "range" in info:
-            range_ = URIRef(info["range"])
-            predicate = URIRef(prop)
-            existing_triples = list(g_no_noise.triples((None, predicate, None)))
-            property_triples[prop] = (range_, existing_triples)
-    
-    if not property_triples:
-        return violated_g
+def add_triples_logical(graph, noise_percentage, disjoint_classes, disjoint_properties):
+    """
+    Add random corrupted triples to a graph based on disjoint classes and properties.
 
-    while count < k:
-        prop = random.choice(properties)
-        range_, existing_triples = property_triples.get(prop, (None, []))
-        
-        if not existing_triples:
-            continue
+    Parameters:
+    - graph: The original RDF graph.
+    - noise_percentage: Percentage of noise to add as corrupted triples.
+    - disjoint_classes: A dictionary mapping classes to their disjoint counterparts.
+    - disjoint_properties: A dictionary mapping properties to their disjoint counterparts.
 
-        non_range_individuals = non_range_domain_individuals_dict[range_]
-        
-        if not non_range_individuals:
-            continue
+    Returns:
+    - noisy_graph: A graph containing only the added noisy triples.
+    - new_graph: The original graph with noisy triples added.
+    """
+    # We remove certain triples from the graph (i.e., TBox triples)
+    graph = remove_triples(graph)
 
-        subj, pred, _ = random.choice(existing_triples)
-        violating_object = random.choice(non_range_individuals)
-        violated_g.add((subj, pred, violating_object))
-        count += 1
+    # Calculate the number of noisy triples to add
+    max_triples = int(noise_percentage * len(graph))  
 
-    return violated_g
+    noisy_graph = rdflib.Graph()
+    new_graph = copy_graph(graph)
+    num_triples = 0
+
+    # Precompute sets for efficiency
+    triples_list = list(graph)
+    all_classes = set(graph.objects(None, rdflib.RDF.type))
+
+    while num_triples < max_triples:
+        triple = random.choice(triples_list)
+        s, p, o = triple
+        # print (f'Triple: {triple}')
+        corrupted_triple = None
+
+        if p == rdflib.RDF.type:
+            # Handle type triples
+            if o in disjoint_classes:
+                corrupted_triple = (s, p, random.choice(disjoint_classes[o]))
+            else:
+                corrupted_triple = (s, p, random.choice(list(all_classes - {o})))
+        elif p in disjoint_properties:
+            # Handle disjoint properties
+            new_p = random.choice(disjoint_properties[p])
+            corrupted_triple = (s, new_p, o)
+        else:
+            # Handle object triples
+            o_classes = list(graph.objects(o, rdflib.RDF.type))
+            for c in o_classes:
+                if c in disjoint_classes:
+                    new_c = random.choice(disjoint_classes[c])
+                    new_o_candidates = list(find_instances(graph, new_c))
+                    if new_o_candidates:
+                        new_o = random.choice(new_o_candidates)
+                        corrupted_triple = (s, p, new_o)
+                        break
+                    
+        # Add corrupted triple if it's valid and unique
+        if corrupted_triple and corrupted_triple not in graph and corrupted_triple not in noisy_graph:
+            noisy_graph.add(corrupted_triple)
+            new_graph.add(corrupted_triple)
+            # print (f'Corrupted Triple: {corrupted_triple}')
+            num_triples += 1
+
+    return noisy_graph, new_graph
