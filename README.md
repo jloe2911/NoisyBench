@@ -17,9 +17,9 @@ For each resource $r$, we construct a small graph $g$ that includes all triples 
 2. `Owlready2-example`: 
 We then apply Pellet to the extended graphs $g'_1$, $g'_2$, ..., $g'_R$, where $R$ represents the set of resources in the original ontology, resulting in the inference graphs $i_1$, $i_2$, ..., $i_R$. 
 3. `FilterInferences.py`: 
-To extract only meaningful triples, we focus on membership and property assertion triples, removing any triples where the object is a Literal or owl:Thing, yielding refined graphs $i^{*}1$, $i^{*}2$, ..., $i^{*}R$. 
+To extract only meaningful triples, we focus on membership and property assertion triples, removing any triples where the object is a Literal or owl:Thing, yielding refined graphs $i*_1$, $i*_2$, ..., $i*_R$. 
 4. `PrepareGraphs.ipynb`: 
-Since our approach is unsupervised, the graphs $g_1$, $g_2$, ..., $g_R$ are ultimately added to $G_{train}$, while $i^{*}1$, $i^{*}2$, ..., $i^{*}R$ are assigned to $G_{test}$. The subgraphs can be found [here] (https://drive.google.com/drive/folders/1KnDF0MUJX4O427z4Oue1njox8A76K2ac?usp=sharing).
+Since our approach is unsupervised, the graphs $g$ are ultimately added to $G_{train}$, while graphs $i*$ are assigned to $G_{test}$. The subgraphs can be found [here] (https://drive.google.com/drive/folders/1KnDF0MUJX4O427z4Oue1njox8A76K2ac?usp=sharing).
 5. `NoiseGeneratation.ipynb`: 
 Generates ABox noise in an ontology: logical, statistical and random contradictions. For each noise generation method, we introduced a parameter $k$, where $k$ indicates the percentage of noise to be added in relation to the total number of triples of the original ontology. We use OWL2DL-1 and Family that can be found [here](https://drive.google.com/drive/folders/1GqatK1voRCQayrkz7gmQi46yEQuIZIWf?usp=drive_link) and should be added to `datasets/{dataset_name}.owl`. The notebook outputs noisy datasets stored in `datasets/noise/{dataset_name}_{noise_generation_method}_{noise_percentage}.owl`. The noisy datasets can also be found [here](https://drive.google.com/drive/folders/14TzofCSdxgvXEA5aJ7fhppK8EuN5k2aH?usp=drive_link).
 6. `OWL2Vec.ipynb`: OWL2Vec*.
