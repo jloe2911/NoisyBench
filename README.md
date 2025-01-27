@@ -1,4 +1,4 @@
-# Introducing Noise: Designing a Benchmark Dataset for Neuro-Symbolic Ontology Reasoners
+# NSORN: Designing a Benchmark Dataset for Neurosymbolic Ontology Reasoning with Noise
 
 ## Description
 
