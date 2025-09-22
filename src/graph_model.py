@@ -1,6 +1,7 @@
+import rdflib
 import pandas as pd
-from rdflib import Graph
 import pickle as pkl
+import torch as th
 
 from pykeen.triples import TriplesFactory
 
@@ -17,10 +18,9 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-from src.utils import *
-from src.noise import *
-from src.kge import *
-
+from src.utils import get_individuals
+from src.noise import get_possible_predicates
+from src.kge import KGEModule
 class GraphModel():
     def __init__(self,
                  file_name,
@@ -471,7 +471,7 @@ class GraphModel():
                 hits_at_10 /= dataloader.dataset_len
                 
                 raw_metrics = (mrr, hits_at_1, hits_at_5, hits_at_10)
-                print(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+                logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
         if "test" in mode:
             return raw_metrics 
         else:
@@ -502,11 +502,11 @@ class GraphModel():
         
     def test(self):
         logger.info("Testing ontology completion...")
-        print('Membership:')
+        logger.info('Membership:')
         membership_metrics = self.compute_ranking_metrics("test_membership")       
-        print('Subsumption:')
+        logger.info('Subsumption:')
         subsumption_metrics = self.compute_ranking_metrics("test_subsumption")
-        print('Link Prediction:')
+        logger.info('Link Prediction:')
         link_prediction_metrics = self.compute_ranking_metrics("test_link_prediction")
         return subsumption_metrics, membership_metrics, link_prediction_metrics
     

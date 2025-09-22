@@ -1,5 +1,4 @@
 import numpy as np
-import random
 from datetime import datetime
 import rdflib
 from rdflib import URIRef
@@ -9,6 +8,10 @@ mowl.init_jvm('10g')
 from mowl.owlapi import OWLAPIAdapter
 from org.semanticweb.owlapi.model.parameters import Imports
 from java.util import HashSet
+
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def copy_graph(g):
     new_g = rdflib.Graph()
@@ -100,7 +103,7 @@ def preprocess_ontology_el(ontology):
     new_ontology.addAxioms(abox_axioms)
     return new_ontology
 
-def get_experimets(dataset_name):
+def get_experiments(dataset_name):
     
     if dataset_name == 'family': 
     
@@ -214,21 +217,24 @@ def get_experimets(dataset_name):
 
     return experiments
 
-def save_results(metrics_subsumption, metrics_membership, metrics_link_prediction, results_dir): 
-    s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10 = metrics_subsumption
-    m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10 = metrics_membership
-    lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10 = metrics_link_prediction
-    with open(results_dir, 'w') as f: 
+def save_results(subsumption_results, membership_results, link_prediction_results, results_dir):
+    with open(results_dir, 'w') as f:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line1 = [m_mrr, m_hits_at_1, m_hits_at_5, m_hits_at_10]
-        line2 = [s_mrr, s_hits_at_1, s_hits_at_5, s_hits_at_10]
-        line3 = [lp_mrr, lp_hits_at_1, lp_hits_at_5, lp_hits_at_10]
-        line = f"Results as of {timestamp}:\n"
-        line += "Membership:\n"
-        line += " & " + " & ".join([f"{x:.3f}" for x in line1]) + "\n"
-        line += "Subsumption:\n"
-        line += " & " + " & ".join([f"{x:.3f}" for x in line2]) + "\n"
-        line += "Link Prediction:\n"
-        line += " & " + " & ".join([f"{x:.3f}" for x in line3]) + "\n"
-        f.write(line)
-    print("Results saved to ", results_dir)
+        f.write(f"Results as of {timestamp}:\n\n")
+        
+        # Function to format metrics
+        def format_metrics(name, results):
+            results_arr = np.array(results)
+            lines = [f"{name}:\n"]
+            for i, row in enumerate(results_arr):
+                lines.append(f"Run {i+1}: " + " & ".join([f"{x:.3f}" for x in row]) + "\n")
+            means = np.mean(results_arr, axis=0)
+            lines.append("Mean: " + " & ".join([f"{x:.3f}" for x in means]) + "\n\n")
+            return "".join(lines)
+        
+        # Write all results
+        f.write(format_metrics("Membership", membership_results))
+        f.write(format_metrics("Subsumption", subsumption_results))
+        f.write(format_metrics("Link Prediction", link_prediction_results))
+    
+    logger.info(f"Results saved to {results_dir}")

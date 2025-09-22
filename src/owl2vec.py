@@ -1,8 +1,15 @@
+import os 
+
 import torch.optim as optim
 import torch 
 import torch.nn as nn
 
-from .graph_model import GraphModel
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+from src.graph_model import GraphModel
+from src.utils import save_results
 
 class OWL2Vec(GraphModel):
     def __init__(self, *args, **kwargs):
@@ -58,6 +65,47 @@ class OWL2Vec(GraphModel):
             
             if epoch % 25 == 0:
                 torch.save(self.model.state_dict(), self.model_path)
-                print(f"Epoch: {epoch}, Loss: {graph_loss:.3f}")
 
         self.save_embeddings_data()
+
+def run_owl2vec(dataset_name, device, experiments):
+    os.makedirs(f'datasets/bin/owl2vec/{dataset_name}', exist_ok=True)
+    os.makedirs(f'models/results/owl2vec/', exist_ok=True)
+
+    for experiment in experiments:
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']
+        
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []
+        
+        for i in range(5):
+            model = OWL2Vec(
+                file_name=file_name,
+                iteration = i, 
+                dataset_name=dataset_name,
+                kge_model='transe',
+                emb_dim=256,
+                margin=0.1,
+                weight_decay=0.0,
+                batch_size=4096*8,
+                lr=0.0001,
+                num_negs=4,
+                test_batch_size=32,
+                epochs=500,
+                device=device,
+                seed=42,
+                initial_tolerance=5
+            )
+            
+            model.train()
+            
+            logging.info(f'{file_name}:')
+            metrics_subsumption, metrics_membership, metrics_link_prediction = model.test()
+
+            subsumption_results.append(metrics_subsumption)
+            membership_results.append(metrics_membership)
+            link_prediction_results.append(metrics_link_prediction)
+
+            save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/owl2vec/{file_name}.txt')

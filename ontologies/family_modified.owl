@@ -1,0 +1,3151 @@
+@prefix : <http://www.co-ode.org/roberts/family-tree.owl#> .
+@prefix fhkb: <http://www.example.com/genealogy.owl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://www.co-ode.org/roberts/family-tree.owl> a owl:Ontology ;
+    rdfs:comment "A simple family relationships ontology and associated instances. the description is of the family of Robert Stevens and the intention is to use the minimal of asserted relationships and the maximum of inference. To do this  I've used role chains, nominals and properties hierarchies." .
+
+:hasBirthYear a rdfs:Datatype .
+
+fhkb:Ancestor a owl:Class ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:isAncestorOf ;
+                        owl:someValuesFrom fhkb:Person ] ) ],
+        [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:isAncestorOf ;
+                        owl:someValuesFrom fhkb:Person ] ) ] .
+
+fhkb:alsoKnownAs a owl:AnnotationProperty .
+
+fhkb:formerlyKnownAs a owl:AnnotationProperty .
+
+fhkb:hasBirthYear a owl:AnnotationProperty .
+
+fhkb:hasBrother a owl:ObjectProperty ;
+    owl:inverseOf fhkb:isBrotherOf ;
+    owl:propertyDisjointWith fhkb:hasSister,
+        fhkb:isChildOf,
+        fhkb:isParentOf,
+        fhkb:isSpouseOf,
+        fhkb:isWifeOf .
+
+fhkb:hasDaughter a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:hasChild ;
+    owl:inverseOf fhkb:isDaughterOf .
+
+fhkb:hasDeathYear a owl:AnnotationProperty .
+
+fhkb:hasHusband a owl:ObjectProperty ;
+    rdfs:range fhkb:Man ;
+    rdfs:subPropertyOf fhkb:hasSpouse ;
+    owl:inverseOf fhkb:isHusbandOf ;
+    owl:propertyChainAxiom ( fhkb:isFemalePartnerIn fhkb:hasMalePartner ),
+        ( fhkb:isFemalePartnerIn fhkb:hasMalePartner ) .
+
+fhkb:hasMarriageYear a owl:AnnotationProperty .
+
+fhkb:hasSon a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:hasChild ;
+    owl:inverseOf fhkb:isSonOf .
+
+fhkb:hasWife a owl:ObjectProperty ;
+    rdfs:range fhkb:Woman ;
+    rdfs:subPropertyOf fhkb:hasSpouse ;
+    owl:inverseOf fhkb:isWifeOf ;
+    owl:propertyChainAxiom ( fhkb:isMalePartnerIn fhkb:hasFemalePartner ),
+        ( fhkb:isMalePartnerIn fhkb:hasFemalePartner ) .
+
+fhkb:knownAs a owl:AnnotationProperty .
+
+fhkb:alexander_ilych_brown_1988 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1988 ;
+    fhkb:isDaughterOf fhkb:clare_bright_1966 .
+
+fhkb:catherine_thompson a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:eden_georgina_gardner_thompson_1810 .
+
+fhkb:clare_archer_1957 a owl:NamedIndividual ;
+    fhkb:hasBrother fhkb:paul_archer_1950 ;
+    fhkb:hasFather fhkb:alec_john_archer_1927 ;
+    fhkb:hasSister fhkb:helen_archer_1955 ;
+    fhkb:isSisterOf fhkb:anne_archer_1964 .
+
+fhkb:daniel_grigg_hewett_1813 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1815 ;
+    fhkb:isBrotherOf fhkb:sarah_hewett_1815 .
+
+fhkb:diana_pool a owl:NamedIndividual ;
+    fhkb:isFemalePartnerIn fhkb:m134 ;
+    fhkb:isMotherOf fhkb:clare_bright_1966,
+        fhkb:james_bright_1964,
+        fhkb:julie_bright_1966 .
+
+fhkb:elizabeth_clamper_1760 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1760 ;
+    fhkb:isMotherOf fhkb:jane_archer,
+        fhkb:john_archer_1804,
+        fhkb:william_archer_1801 .
+
+fhkb:elizabeth_rivers_1787 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1787 ;
+    fhkb:isMotherOf fhkb:anne_lockey_1829,
+        fhkb:george_baker_lockey_1812,
+        fhkb:henry_waterloo_lockey_1820,
+        fhkb:john_lockey_1824,
+        fhkb:joseph_lockey_1833,
+        fhkb:mary_lockey_1818,
+        fhkb:nicholas_lockey_1826,
+        fhkb:redman_lockey_1822,
+        fhkb:sarah_lockey_1810,
+        fhkb:william_rivers_lockey_1815 .
+
+fhkb:emily_jennifer_pierrepoint_1996 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1996 ;
+    fhkb:hasBrother fhkb:benjamin_pierrepoint_1994 ;
+    fhkb:isDaughterOf fhkb:janet_bright_1964 .
+
+fhkb:ethel_harvey_1888 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1888 ;
+    fhkb:hasFather fhkb:john_henry_harvey ;
+    fhkb:hasMother fhkb:mary_eliza_jessop_1863 ;
+    fhkb:isSisterOf fhkb:hilda_harvey_1890 .
+
+fhkb:frank_hewett_bright_1920 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1920 ;
+    fhkb:hasDeathYear 1967 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isBrotherOf fhkb:charlotte_bright_1928 .
+
+fhkb:harry_james_nelson_2001 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2001 ;
+    fhkb:isSonOf fhkb:julie_bright_1966 .
+
+fhkb:hasAncestor a owl:ObjectProperty,
+        owl:TransitiveProperty ;
+    rdfs:subPropertyOf fhkb:hasRelation,
+        owl:topObjectProperty ;
+    owl:inverseOf fhkb:isAncestorOf .
+
+fhkb:henry_edmond_peter_bright_1926 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1926 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isBrotherOf fhkb:james_alexander_bright_1921 .
+
+fhkb:isBloodrelationOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:hasRelation,
+        owl:topObjectProperty .
+
+fhkb:isDaughterOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:isChildOf .
+
+fhkb:isFatherOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:isParentOf .
+
+fhkb:isHusbandOf a owl:ObjectProperty .
+
+fhkb:isMotherOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:isParentOf .
+
+fhkb:isPartnerIn a owl:ObjectProperty .
+
+fhkb:isSisterOf a owl:IrreflexiveProperty,
+        owl:ObjectProperty ;
+    rdfs:domain fhkb:Woman ;
+    rdfs:range fhkb:Person ;
+    rdfs:subPropertyOf fhkb:isSiblingOf .
+
+fhkb:isSonOf a owl:ObjectProperty ;
+    rdfs:subPropertyOf fhkb:isChildOf .
+
+fhkb:jack_william_usher_1999 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 19 ;
+    fhkb:isSonOf fhkb:andrew_usher_1965 .
+
+fhkb:john_lockey_1789 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1789 ;
+    fhkb:isFatherOf fhkb:anne_lockey_1829,
+        fhkb:george_baker_lockey_1812,
+        fhkb:henry_waterloo_lockey_1820,
+        fhkb:john_lockey_1824,
+        fhkb:joseph_lockey_1833,
+        fhkb:mary_lockey_1818,
+        fhkb:nicholas_lockey_1826,
+        fhkb:redman_lockey_1822,
+        fhkb:sarah_lockey_1810,
+        fhkb:william_rivers_lockey_1815 .
+
+fhkb:joyce_scutchings a owl:NamedIndividual ;
+    fhkb:isFemalePartnerIn fhkb:m133 ;
+    fhkb:isMotherOf fhkb:ian_bright_1959,
+        fhkb:janet_bright_1964,
+        fhkb:mark_bright_1956,
+        fhkb:william_bright_1970 .
+
+fhkb:kathleen_constance_susan_bright_1924 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1924 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isSisterOf fhkb:james_alexander_bright_1921 .
+
+fhkb:laura_templar_1994 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1994 ;
+    fhkb:hasFather fhkb:peter_templar_1962 ;
+    fhkb:isSisterOf fhkb:emma_templar_1991 .
+
+fhkb:louise_templar_1993 a fhkb:Woman,
+        owl:NamedIndividual ;
+    fhkb:hasBirthYear 1993 ;
+    fhkb:hasFather fhkb:stephen_templar_1960 .
+
+fhkb:m100 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_jacobs_1834 ;
+    fhkb:hasMalePartner fhkb:john_heath ;
+    fhkb:hasMarriageYear 1863 .
+
+fhkb:m102 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:iris_ellen_archer_1906 ;
+    fhkb:hasMalePartner fhkb:william_george_bright_1901 ;
+    fhkb:hasMarriageYear 1929 .
+
+fhkb:m103 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:elizabeth_frances_jessop_1869 ;
+    fhkb:hasMalePartner fhkb:william_rever_1870 ;
+    fhkb:hasMarriageYear 1895 .
+
+fhkb:m104 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:violet_sylvia_steward_1894 ;
+    fhkb:hasMalePartner fhkb:charles_herbert_rever_1895 ;
+    fhkb:hasMarriageYear 1926 .
+
+fhkb:m105 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_houghton ;
+    fhkb:hasMalePartner fhkb:william_steward_1766 ;
+    fhkb:hasMarriageYear 1796 .
+
+fhkb:m106 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ellen_harsley ;
+    fhkb:hasMalePartner fhkb:john_steward_1802 ;
+    fhkb:hasMarriageYear 1826 .
+
+fhkb:m107 a owl:NamedIndividual ;
+    fhkb:hasMarriageYear 1854 .
+
+fhkb:m108 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:lois_green_1871 ;
+    fhkb:hasMalePartner fhkb:john_tacey_steward_1873 ;
+    fhkb:hasMarriageYear 1894 .
+
+fhkb:m113 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:elizabeth_blanchard_1807 ;
+    fhkb:hasMalePartner fhkb:crispin_hutchinson .
+
+fhkb:m114 a owl:NamedIndividual ;
+    fhkb:hasMarriageYear 1859 .
+
+fhkb:m115 a owl:NamedIndividual ;
+    fhkb:hasMalePartner fhkb:henry_edmund_bright_1862 .
+
+fhkb:m117 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:priscilla_saunders_1810 ;
+    fhkb:hasMalePartner fhkb:james_jacobs_1806 ;
+    fhkb:hasMarriageYear 1831 .
+
+fhkb:m119 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_webb ;
+    fhkb:hasMalePartner fhkb:james_bright_1787 ;
+    fhkb:hasMarriageYear 1808 .
+
+fhkb:m122 a owl:NamedIndividual ;
+    fhkb:hasMalePartner fhkb:james_jessop_1836 ;
+    fhkb:hasMarriageYear 1862 .
+
+fhkb:m124 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_bainton_1780 ;
+    fhkb:hasMarriageYear 1803 .
+
+fhkb:m126 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:margaret_grace_rever_1934 ;
+    fhkb:hasMalePartner fhkb:david_bright_1934 ;
+    fhkb:hasMarriageYear 1958 .
+
+fhkb:m127 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:martha_stafford_1814 ;
+    fhkb:hasMalePartner fhkb:james_bright_1809 ;
+    fhkb:hasMarriageYear 1834 .
+
+fhkb:m128 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:frances_elizabeth_ingelby_1816 .
+
+fhkb:m129 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ann_james .
+
+fhkb:m131 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:harriet_ann_young_1825 ;
+    fhkb:hasMalePartner fhkb:james_whitfield_1821 ;
+    fhkb:hasMarriageYear 1848 .
+
+fhkb:m132 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_hollingsworth_1801 ;
+    fhkb:hasMalePartner fhkb:thomas_tacey_1806 ;
+    fhkb:hasMarriageYear 1827 .
+
+fhkb:m135 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ada_rachel_heath_1868 ;
+    fhkb:hasMalePartner fhkb:john_william_folland .
+
+fhkb:m136 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:gwendoline_heath_1878 ;
+    fhkb:hasMalePartner fhkb:john_william_folland ;
+    fhkb:hasMarriageYear 1947 .
+
+fhkb:m137 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:jane_blake_1784 ;
+    fhkb:hasMalePartner fhkb:jeremiah_jacobs ;
+    fhkb:hasMarriageYear 1801 .
+
+fhkb:m138 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_eliza_jessop_1863 ;
+    fhkb:hasMalePartner fhkb:john_henry_harvey ;
+    rdfs:comment "a breeding relationship" .
+
+fhkb:m139 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_eliza_jessop_1863 ;
+    fhkb:hasMalePartner fhkb:robert_harvey ;
+    rdfs:comment "a breeding relationship only." .
+
+fhkb:m140 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:frances_spikin_1779 ;
+    fhkb:hasMalePartner fhkb:edward_blanchard_1771 ;
+    fhkb:hasMarriageYear 1801 .
+
+fhkb:m141 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_bainton_1780 ;
+    fhkb:hasMalePartner fhkb:william_tacey_1783 ;
+    fhkb:hasMarriageYear 1803 .
+
+fhkb:m142 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:eleanor_pringle_1741 ;
+    fhkb:hasMalePartner fhkb:humphrey_archer_1726 ;
+    fhkb:hasMarriageYear 1756 .
+
+fhkb:m143 a owl:NamedIndividual ;
+    fhkb:hasMalePartner fhkb:william_archer_1764 ;
+    fhkb:hasMarriageYear 1796 .
+
+fhkb:m144 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:elizabeth_gray_1810 ;
+    fhkb:hasMalePartner fhkb:john_archer_1804 ;
+    fhkb:hasMarriageYear 1829 .
+
+fhkb:m145 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_english_1862 ;
+    fhkb:hasMalePartner fhkb:john_archer_1835 ;
+    fhkb:hasMarriageYear 1862 .
+
+fhkb:m146 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_glover ;
+    fhkb:hasMalePartner fhkb:john_hollinsworth_1768 ;
+    fhkb:hasMarriageYear 1801 .
+
+fhkb:m147 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_lockey_1810 ;
+    fhkb:hasMalePartner fhkb:john_archer_1835 ;
+    fhkb:hasMarriageYear 1872 .
+
+fhkb:m148 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:violet_heath_1887 ;
+    fhkb:hasMalePartner fhkb:james_alexander_archer_1882 ;
+    fhkb:hasMarriageYear 1906 .
+
+fhkb:m149 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_frankish ;
+    fhkb:hasMalePartner fhkb:william_green ;
+    fhkb:hasMarriageYear 1810 .
+
+fhkb:m150 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:celia_pinchbeck_1949 ;
+    fhkb:hasMalePartner fhkb:david_brown ;
+    fhkb:hasMarriageYear 1969 .
+
+fhkb:m151 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:charlotte_hewett_1863 ;
+    fhkb:hasMalePartner fhkb:henry_edmund_bright_1862 ;
+    fhkb:hasMarriageYear 1885 .
+
+fhkb:m152 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_gulliver ;
+    fhkb:hasMalePartner fhkb:james_bright_1761 ;
+    fhkb:hasMarriageYear 1785 .
+
+fhkb:m153 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ann_norton_1799 ;
+    fhkb:hasMalePartner fhkb:edward_young_1795 ;
+    fhkb:hasMarriageYear 1820 .
+
+fhkb:m154 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:harriet_whitefield_1861 ;
+    fhkb:hasMalePartner fhkb:william_lock_jacobs_1861 ;
+    fhkb:hasMarriageYear 1879 .
+
+fhkb:m155 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_jewell_1790 ;
+    fhkb:hasMalePartner fhkb:james_whitfield_1792 ;
+    fhkb:hasMarriageYear 1811 .
+
+fhkb:m156 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:caroline_lavinia_tubb_1840 ;
+    fhkb:hasMalePartner fhkb:james_bright_1839 ;
+    fhkb:hasMarriageYear 1859 .
+
+fhkb:m157 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:caroline_cox ;
+    fhkb:hasMalePartner fhkb:samuel_tubb_1811 ;
+    fhkb:hasMarriageYear 1832 .
+
+fhkb:m158 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_chard_1787 ;
+    fhkb:hasMalePartner fhkb:william_tubb_1786 .
+
+fhkb:m159 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:susannah_tacey_1834 ;
+    fhkb:hasMalePartner fhkb:james_steward_1830 ;
+    fhkb:hasMarriageYear 1854 .
+
+fhkb:m160 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:vera_tuton_1920 ;
+    fhkb:hasMalePartner fhkb:tom_pinchbeck ;
+    fhkb:hasMarriageYear 1946 .
+
+fhkb:m161 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:elma_ellen_story_1893 ;
+    fhkb:hasMalePartner fhkb:arthur_tuton ;
+    fhkb:hasMarriageYear 1917 .
+
+fhkb:m162 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_ellen_steward_1855 ;
+    fhkb:hasMalePartner fhkb:luke_bateman_story ;
+    fhkb:hasMarriageYear 1881 .
+
+fhkb:m164 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ann_lodge_1763 ;
+    fhkb:hasMalePartner fhkb:james_dickens_1774 ;
+    fhkb:hasMarriageYear 1800 .
+
+fhkb:m165 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_stocks_1768 ;
+    fhkb:hasMalePartner fhkb:robert_harsley_1762 ;
+    fhkb:hasMarriageYear 1789 .
+
+fhkb:m166 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:caroline_lavinia_tubb_1840 ;
+    fhkb:hasMalePartner fhkb:thomas_hayden_terliven_1838 ;
+    fhkb:hasMarriageYear 1866 .
+
+fhkb:m167 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:rebecca_wife_of_james_stafford ;
+    fhkb:hasMalePartner fhkb:james_stafford_1779 ;
+    fhkb:hasMarriageYear 1876 .
+
+fhkb:m168 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_pickard_1839 ;
+    fhkb:hasMalePartner fhkb:henry_green_1836 ;
+    fhkb:hasMarriageYear 1861 .
+
+fhkb:m169 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:frances_elizabeth_ingelby_1816 ;
+    fhkb:hasMalePartner fhkb:richard_pickard_1807 ;
+    fhkb:hasMarriageYear 1835 .
+
+fhkb:m170 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_lockey_1848 ;
+    fhkb:hasMalePartner fhkb:john_archer_1835 ;
+    fhkb:hasMarriageYear 1872 .
+
+fhkb:m171 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:jane_taylor ;
+    fhkb:hasMalePartner fhkb:thomas_burton_1765 ;
+    fhkb:hasMarriageYear 1815 .
+
+fhkb:m172 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:jane_burton_1823 ;
+    fhkb:hasMalePartner fhkb:james_hewett_1815 ;
+    fhkb:hasMarriageYear 1845 .
+
+fhkb:m173 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:susanna_wife_of_william_cotton ;
+    fhkb:hasMalePartner fhkb:william_cotton .
+
+fhkb:m174 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:martha_wife_of_john_cotton ;
+    fhkb:hasMalePartner fhkb:john_cotton_1778 .
+
+fhkb:m175 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:martha_cotton_1832 ;
+    fhkb:hasMalePartner fhkb:james_jessop_1836 ;
+    fhkb:hasMarriageYear 1862 .
+
+fhkb:m176 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:sarah_dickens_1801 ;
+    fhkb:hasMalePartner fhkb:edward_jessop_1802 .
+
+fhkb:m177 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:hannah_hutchinson_1804 ;
+    fhkb:hasMalePartner fhkb:william_green_1813 ;
+    fhkb:hasMarriageYear 1833 .
+
+fhkb:m178 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:ann_james ;
+    fhkb:hasMalePartner fhkb:william_ingelby_1789 ;
+    fhkb:hasMarriageYear 1800 .
+
+fhkb:m179 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_wife_of_william_hewett ;
+    fhkb:hasMalePartner fhkb:william_hewett .
+
+fhkb:m180 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:susanna_walkerly_1777 ;
+    fhkb:hasMalePartner fhkb:ralph_pickard_1775 ;
+    fhkb:hasMarriageYear 1800 .
+
+fhkb:m181 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:eden_georgina_gardner_thompson_1810 ;
+    fhkb:hasMalePartner fhkb:william_rivers_lockey_1815 ;
+    fhkb:hasMarriageYear 1838 .
+
+fhkb:m182 a owl:NamedIndividual ;
+    fhkb:hasFemalePartner fhkb:mary_wife_of_john_jessop ;
+    fhkb:hasMalePartner fhkb:john_jessop_1773 .
+
+fhkb:marion_jean_bright_1922 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1922 ;
+    fhkb:hasDeathYear 1931 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isSisterOf fhkb:james_alexander_bright_1921 .
+
+fhkb:mary_paddison a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:hannah_hutchinson_1804 .
+
+fhkb:mary_wife_of_thomas_tisy a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:william_tacey_1783 .
+
+fhkb:mega_clamper_1995 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1995 ;
+    fhkb:hasMother fhkb:amanda_usher_1968 ;
+    fhkb:isSisterOf fhkb:louise_clamper_1998 .
+
+fhkb:rebecca_bright_1999 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1999 ;
+    fhkb:hasBrother fhkb:william_bright_2001 ;
+    fhkb:isDaughterOf fhkb:james_bright_1964 .
+
+fhkb:reece_bright_1993 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1993 ;
+    fhkb:isSonOf fhkb:william_bright_1970 .
+
+fhkb:robert_harvey_1906 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1906 ;
+    fhkb:hasMother fhkb:mary_eliza_jessop_1863 ;
+    fhkb:isBrotherOf fhkb:elma_harvey_1903 ;
+    fhkb:isSonOf fhkb:robert_harvey .
+
+fhkb:sarah_rever_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 ;
+    fhkb:hasDeathYear 1806 ;
+    fhkb:isMotherOf fhkb:william_rever_1870 .
+
+fhkb:thomas_taisy a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:william_tacey_1783 .
+
+fhkb:william_hutchinson a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:hannah_hutchinson_1804 .
+
+fhkb:william_lock a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:william_lock_jacobs_1861 .
+
+fhkb:alice_harvey_1895 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1895 ;
+    fhkb:hasFather fhkb:john_henry_harvey ;
+    fhkb:isDaughterOf fhkb:mary_eliza_jessop_1863 .
+
+fhkb:ann_lodge_1763 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1763 ;
+    fhkb:hasDeathYear 1831 ;
+    fhkb:isMotherOf fhkb:mary_dickens_1802,
+        fhkb:sarah_dickens_1801 .
+
+fhkb:ann_norton_1799 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1799 ;
+    fhkb:hasDeathYear 1880 ;
+    fhkb:isMotherOf fhkb:edward_young_1821,
+        fhkb:harriet_ann_young_1825,
+        fhkb:henry_young_1831,
+        fhkb:james_young_1836,
+        fhkb:john_young_1827,
+        fhkb:samuel_young_1829,
+        fhkb:william_young_1823 .
+
+fhkb:arthur_tuton a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:vera_tuton_1920 .
+
+fhkb:avril_bright_1990 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1990 ;
+    fhkb:hasFather fhkb:ian_bright_1959 ;
+    fhkb:isSisterOf fhkb:thomas_john_bright_1988 .
+
+fhkb:benjamin_anthony_heath_2005 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2005 ;
+    fhkb:hasBrother fhkb:joshua_charles_heath_2003 ;
+    fhkb:hasFather fhkb:nicholas_charles_heath_1964 .
+
+fhkb:benjamin_pierrepoint_1994 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1994 ;
+    fhkb:hasMother fhkb:janet_bright_1964 .
+
+fhkb:brenda_cleife_1947 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1947 ;
+    fhkb:hasBrother fhkb:eric_cleife_1951,
+        fhkb:roy_cleife_1944 ;
+    fhkb:hasMother fhkb:joyce_archer_1921 ;
+    fhkb:hasSister fhkb:sheila_cleife_1949 .
+
+fhkb:caroline_cox a owl:NamedIndividual ;
+    fhkb:alsoKnownAs "Catherine" ;
+    fhkb:isMotherOf fhkb:caroline_lavinia_tubb_1840,
+        fhkb:emma_jane_tubb_1836,
+        fhkb:samuel_tubb_1832,
+        fhkb:thomas_andrew_tubb_1838 .
+
+fhkb:charlotte_bright_1928 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1928 ;
+    fhkb:hasDeathYear 1932 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isSisterOf fhkb:james_alexander_bright_1921 .
+
+fhkb:christian_bright_1985 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1985 ;
+    fhkb:hasFather fhkb:mark_bright_1956 ;
+    fhkb:isBrotherOf fhkb:holly_bright_1983 .
+
+fhkb:crispin_hutchinson a owl:NamedIndividual .
+
+fhkb:david_brown a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:rhiannon_brown_1969 .
+
+fhkb:edward_blanchard_1771 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1771 ;
+    fhkb:hasDeathYear 1844 ;
+    fhkb:isFatherOf fhkb:elizabeth_blanchard_1807 .
+
+fhkb:edward_young_1795 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1795 ;
+    fhkb:hasDeathYear 1874 ;
+    fhkb:isFatherOf fhkb:edward_young_1821,
+        fhkb:harriet_ann_young_1825,
+        fhkb:henry_young_1831,
+        fhkb:james_young_1836,
+        fhkb:john_young_1827,
+        fhkb:samuel_young_1829,
+        fhkb:william_young_1823 .
+
+fhkb:eleanor_pringle_1741 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1741 ;
+    fhkb:isMotherOf fhkb:george_archer_1760,
+        fhkb:james_archer_1757,
+        fhkb:william_archer_1764 .
+
+fhkb:elizabeth_gray_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:isMotherOf fhkb:christopher_archer_1849,
+        fhkb:dorothy_archer_1845,
+        fhkb:elizabeth_archer_1843,
+        fhkb:james_archer_1840,
+        fhkb:jane_archer_1837,
+        fhkb:john_archer_1835,
+        fhkb:mary_archer_1850,
+        fhkb:thomas_archer_1849,
+        fhkb:william_archer_1832 .
+
+fhkb:ellen_harsley a owl:NamedIndividual .
+
+fhkb:elma_harvey_1903 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1903 ;
+    fhkb:hasFather fhkb:robert_harvey ;
+    fhkb:isDaughterOf fhkb:mary_eliza_jessop_1863 .
+
+fhkb:emma_templar_1991 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1991 ;
+    fhkb:isDaughterOf fhkb:peter_templar_1962 .
+
+fhkb:eric_cleife_1951 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1951 ;
+    fhkb:hasBrother fhkb:roy_cleife_1944 ;
+    fhkb:hasMother fhkb:joyce_archer_1921 ;
+    fhkb:hasSister fhkb:brenda_cleife_1947,
+        fhkb:sheila_cleife_1949 .
+
+fhkb:finlay_alex_clamper_2002 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2002 ;
+    fhkb:isSonOf fhkb:amanda_usher_1968 .
+
+fhkb:frances_spikin_1779 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1779 ;
+    fhkb:hasDeathYear 1830 ;
+    fhkb:isMotherOf fhkb:elizabeth_blanchard_1807 .
+
+fhkb:hasChild a owl:ObjectProperty ;
+    owl:inverseOf fhkb:isChildOf .
+
+fhkb:hasFather a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain fhkb:Person ;
+    rdfs:range fhkb:Man ;
+    rdfs:subPropertyOf fhkb:hasParent ;
+    owl:inverseOf fhkb:isFatherOf .
+
+fhkb:hasFemalePartner a owl:ObjectProperty ;
+    rdfs:domain fhkb:Marriage ;
+    rdfs:range fhkb:Woman ;
+    rdfs:subPropertyOf fhkb:hasPartner ;
+    owl:inverseOf fhkb:isFemalePartnerIn .
+
+fhkb:hasMalePartner a owl:ObjectProperty ;
+    rdfs:domain fhkb:Marriage ;
+    rdfs:range fhkb:Man ;
+    rdfs:subPropertyOf fhkb:hasPartner ;
+    owl:inverseOf fhkb:isMalePartnerIn .
+
+fhkb:hasMother a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain fhkb:Person ;
+    rdfs:range fhkb:Woman ;
+    rdfs:subPropertyOf fhkb:hasParent ;
+    owl:inverseOf fhkb:isMotherOf .
+
+fhkb:hasPartner a owl:ObjectProperty ;
+    rdfs:domain fhkb:Marriage ;
+    rdfs:range fhkb:Person ;
+    owl:inverseOf fhkb:isPartnerIn ;
+    owl:propertyDisjointWith fhkb:hasSister,
+        fhkb:isParentOf .
+
+fhkb:hasRelation a owl:ObjectProperty,
+        owl:SymmetricProperty ;
+    rdfs:domain fhkb:Person ;
+    rdfs:range fhkb:Person .
+
+fhkb:hasSister a owl:ObjectProperty ;
+    owl:inverseOf fhkb:isSisterOf ;
+    owl:propertyDisjointWith fhkb:isChildOf,
+        fhkb:isParentOf,
+        fhkb:isSpouseOf,
+        fhkb:isUncleOf .
+
+fhkb:hasSpouse a owl:ObjectProperty ;
+    owl:inverseOf fhkb:isSpouseOf ;
+    owl:propertyDisjointWith fhkb:isUncleOf .
+
+fhkb:hilda_harvey_1890 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1890 ;
+    fhkb:hasFather fhkb:john_henry_harvey ;
+    fhkb:hasMother fhkb:mary_eliza_jessop_1863 ;
+    fhkb:isSisterOf fhkb:john_jessop_harvey_1892 .
+
+fhkb:holly_bright_1983 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1983 ;
+    fhkb:hasFather fhkb:mark_bright_1956 ;
+    fhkb:isSisterOf fhkb:christian_bright_1985 .
+
+fhkb:humphrey_archer_1726 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1726 ;
+    fhkb:isFatherOf fhkb:george_archer_1760,
+        fhkb:james_archer_1757,
+        fhkb:william_archer_1764 .
+
+fhkb:isSiblingOf a owl:ObjectProperty,
+        owl:SymmetricProperty,
+        owl:TransitiveProperty ;
+    rdfs:subPropertyOf fhkb:isBloodrelationOf ;
+    owl:propertyChainAxiom ( fhkb:hasParent fhkb:isParentOf ),
+        ( fhkb:hasParent fhkb:isParentOf ) .
+
+fhkb:isUncleOf a owl:ObjectProperty ;
+    rdfs:domain fhkb:Man ;
+    rdfs:range fhkb:Person ;
+    owl:propertyChainAxiom ( fhkb:isBrotherOf fhkb:isParentOf ),
+        ( fhkb:isBrotherOf fhkb:isParentOf ) ;
+    owl:propertyDisjointWith fhkb:isWifeOf .
+
+fhkb:james_bright_1761 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1761 ;
+    fhkb:hasDeathYear 1836 ;
+    fhkb:isFatherOf fhkb:james_bright_1787 .
+
+fhkb:james_dickens_1774 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1774 ;
+    fhkb:hasDeathYear 1836 ;
+    fhkb:isFatherOf fhkb:mary_dickens_1802,
+        fhkb:sarah_dickens_1801 .
+
+fhkb:james_hewett_1815 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1815 ;
+    fhkb:hasDeathYear 1883 ;
+    fhkb:isFatherOf fhkb:charlotte_hewett_1863,
+        fhkb:elisa_amelia_hewett_1858,
+        fhkb:emma_hewett_1860,
+        fhkb:james_hewett_1850,
+        fhkb:jane_hewett_1849,
+        fhkb:john_james_hewett_1845,
+        fhkb:mary_ann_hewett_1852,
+        fhkb:rosena_martha_hewett_1847 .
+
+fhkb:james_keith_archer_1946 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1946 ;
+    fhkb:hasBrother fhkb:ian_alexander_archer_1944 ;
+    fhkb:hasFather fhkb:norman_james_archer_1909 ;
+    fhkb:hasSister fhkb:jean_margaret_archer_1934,
+        fhkb:yvonne_archer_1940 .
+
+fhkb:james_stafford_1779 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1779 ;
+    fhkb:hasDeathYear 1852 ;
+    fhkb:isFatherOf fhkb:george_stafford_1807,
+        fhkb:james_stafford_1803,
+        fhkb:john_hewson_stafford_1811,
+        fhkb:martha_stafford_1814,
+        fhkb:mary_ann_stafford_1810,
+        fhkb:rebecca_stafford_1816 .
+
+fhkb:james_whitfield_1792 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1792 ;
+    fhkb:isFatherOf fhkb:james_whitfield_1821,
+        fhkb:louisa_whitfield_1817,
+        fhkb:mary_ann_whitfield_1824,
+        fhkb:robert_whitfield_1813,
+        fhkb:sarah_jane_whitfield_1818,
+        fhkb:sarah_jane_whitfield_1829,
+        fhkb:thomas_william_whitfield_1826 .
+
+fhkb:jane_blake_1784 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1784 ;
+    fhkb:isMotherOf fhkb:james_jacobs_1806 .
+
+fhkb:jane_taylor a owl:NamedIndividual .
+
+fhkb:jeremiah_jacobs a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:james_jacobs_1806 .
+
+fhkb:john_heath a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:ada_rachel_heath_1868,
+        fhkb:gwendoline_heath_1878,
+        fhkb:lemuel_frederick_heath_1871 .
+
+fhkb:john_hollinsworth_1768 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1768 ;
+    fhkb:hasDeathYear 1838 ;
+    fhkb:isFatherOf fhkb:ann_hollinsworth_1808,
+        fhkb:james_hollinsworth_1804,
+        fhkb:mary_hollingsworth_1801 .
+
+fhkb:john_jessop_1773 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1773 ;
+    fhkb:isFatherOf fhkb:edward_jessop_1802 .
+
+fhkb:john_jessop_harvey_1892 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1892 ;
+    fhkb:hasFather fhkb:john_henry_harvey ;
+    fhkb:isBrotherOf fhkb:alice_harvey_1895 ;
+    fhkb:isSonOf fhkb:mary_eliza_jessop_1863 .
+
+fhkb:joshua_charles_heath_2003 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2003 ;
+    fhkb:hasBrother fhkb:benjamin_anthony_heath_2005 ;
+    fhkb:hasFather fhkb:nicholas_charles_heath_1964 .
+
+fhkb:louise_clamper_1998 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1998 ;
+    fhkb:hasMother fhkb:amanda_usher_1968 ;
+    fhkb:isSisterOf fhkb:finlay_alex_clamper_2002 .
+
+fhkb:luke_bateman_story a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:elma_ellen_story_1893 .
+
+fhkb:lynn_michaela_heath_2008 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2008 ;
+    fhkb:hasFather fhkb:mark_anthony_heath_1960 ;
+    fhkb:isSisterOf fhkb:rhys_anthony_heath_2006 .
+
+fhkb:martha_taylor_burton_1816 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1816 ;
+    fhkb:isSisterOf fhkb:bethia_burton_1821 .
+
+fhkb:martha_wife_of_john_cotton a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:martha_cotton_1806,
+        fhkb:rebecca_cotton_1818,
+        fhkb:susannah_cotton_1813,
+        fhkb:vincent_cotton_1808,
+        fhkb:william_john_cotton_1804 .
+
+fhkb:martin_dowse_1944 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1944 ;
+    fhkb:hasBrother fhkb:alan_john_dowse_1936 ;
+    fhkb:hasMother fhkb:ethel_archer_1912 ;
+    fhkb:hasSister fhkb:june_dowse_1941,
+        fhkb:maureen_dowse_1939 .
+
+fhkb:mary_english_1862 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1862 ;
+    fhkb:isMotherOf fhkb:john_english_archer,
+        fhkb:thomas_archer_1868 .
+
+fhkb:mary_frankish a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:ann_green_1806,
+        fhkb:john_green_1802,
+        fhkb:mary_green_1803,
+        fhkb:rebecca_green_1800,
+        fhkb:tamar_green_1810,
+        fhkb:william_green_1813,
+        fhkb:zilpah_green_1810 .
+
+fhkb:mary_glover a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:ann_hollinsworth_1808,
+        fhkb:james_hollinsworth_1804,
+        fhkb:mary_hollingsworth_1801 .
+
+fhkb:mary_gulliver a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:james_bright_1787 .
+
+fhkb:mary_houghton a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:ellen_steward_1797,
+        fhkb:hannah_steward_1801,
+        fhkb:james_steward_1798,
+        fhkb:john_steward_1802,
+        fhkb:mark_steward_1811,
+        fhkb:william_steward_1799 .
+
+fhkb:mary_wife_of_john_jessop a owl:NamedIndividual .
+
+fhkb:mary_wife_of_william_hewett a owl:NamedIndividual .
+
+fhkb:maureen_dowse_1939 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1939 ;
+    fhkb:hasBrother fhkb:alan_john_dowse_1936,
+        fhkb:martin_dowse_1944 ;
+    fhkb:hasMother fhkb:ethel_archer_1912 ;
+    fhkb:hasSister fhkb:june_dowse_1941 .
+
+fhkb:patricia_bright_1938 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1938 ;
+    fhkb:hasDeathYear 1938 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isSisterOf fhkb:james_alexander_bright_1921 .
+
+fhkb:paul_archer_1950 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1950 ;
+    fhkb:hasFather fhkb:alec_john_archer_1927 ;
+    fhkb:hasSister fhkb:anne_archer_1964,
+        fhkb:helen_archer_1955 .
+
+fhkb:peter_william_bright_1941 a owl:NamedIndividual ;
+    fhkb:hasFather fhkb:william_george_bright_1901 ;
+    fhkb:hasMother fhkb:iris_ellen_archer_1906 ;
+    fhkb:isBrotherOf fhkb:david_bright_1934,
+        fhkb:john_bright_1930 ;
+    fhkb:isFatherOf fhkb:clare_bright_1966,
+        fhkb:james_bright_1964,
+        fhkb:julie_bright_1966 ;
+    fhkb:isMalePartnerIn fhkb:m134 .
+
+fhkb:priscilla_saunders_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:isMotherOf fhkb:charles_jacobs_1842,
+        fhkb:fanny_jacobs_1840,
+        fhkb:frank_jacobs_1846,
+        fhkb:george_jacobs_1852,
+        fhkb:henry_jacobs_1849,
+        fhkb:jane_jacobs_1836,
+        fhkb:lucy_jacobs_1844,
+        fhkb:sarah_jacobs_1834 .
+
+fhkb:ralph_pickard_1775 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1775 ;
+    fhkb:hasDeathYear 1811 ;
+    fhkb:isFatherOf fhkb:ann_pickard_1809,
+        fhkb:elizabeth_pickard_1805,
+        fhkb:richard_pickard_1807,
+        fhkb:susanna_pickard_1803,
+        fhkb:william_pickard_1805 .
+
+fhkb:rebecca_wife_of_james_stafford a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1773 ;
+    fhkb:hasDeathYear 1850 ;
+    fhkb:isMotherOf fhkb:george_stafford_1807,
+        fhkb:james_stafford_1803,
+        fhkb:john_hewson_stafford_1811,
+        fhkb:martha_stafford_1814,
+        fhkb:mary_ann_stafford_1810,
+        fhkb:rebecca_stafford_1816 .
+
+fhkb:rhys_anthony_heath_2006 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2006 ;
+    fhkb:hasFather fhkb:mark_anthony_heath_1960 ;
+    fhkb:isBrotherOf fhkb:lynn_michaela_heath_2008 .
+
+fhkb:richard_john_bright_1962 a owl:NamedIndividual ;
+    fhkb:hasFather fhkb:david_bright_1934 ;
+    fhkb:hasMother fhkb:margaret_grace_rever_1934 ;
+    fhkb:isBrotherOf fhkb:robert_david_bright_1965 .
+
+fhkb:robert_david_bright_1965 a owl:NamedIndividual ;
+    fhkb:hasFather fhkb:david_bright_1934 ;
+    fhkb:hasMother fhkb:margaret_grace_rever_1934 ;
+    fhkb:isBrotherOf fhkb:richard_john_bright_1962 .
+
+fhkb:robert_harsley_1762 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1762 ;
+    fhkb:hasDeathYear 1813 ;
+    fhkb:isFatherOf fhkb:eleanor_harsley_1808,
+        fhkb:elizabeth_harsley_1803,
+        fhkb:john_harsley_1791,
+        fhkb:mary_harsley_1810,
+        fhkb:randall_harsley_1801,
+        fhkb:rebecca_harsley_1793 .
+
+fhkb:robert_hewett_1807 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1807 ;
+    fhkb:isBrotherOf fhkb:sarah_hewett_1815 .
+
+fhkb:sarah_chard_1787 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1787 ;
+    fhkb:isMotherOf fhkb:edward_tubb_1827,
+        fhkb:henry_tubb_1825,
+        fhkb:james_tubb_1809,
+        fhkb:john_tubb_1816,
+        fhkb:mary_tubb_1814,
+        fhkb:samuel_tubb_1811,
+        fhkb:sarah_jane_tubb_1812,
+        fhkb:thomas_tubb_1820,
+        fhkb:william_tubb_1808 .
+
+fhkb:sarah_jewell_1790 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1790 ;
+    fhkb:isMotherOf fhkb:james_whitfield_1821,
+        fhkb:louisa_whitfield_1817,
+        fhkb:mary_ann_whitfield_1824,
+        fhkb:robert_whitfield_1813,
+        fhkb:sarah_jane_whitfield_1818,
+        fhkb:sarah_jane_whitfield_1829,
+        fhkb:thomas_william_whitfield_1826 .
+
+fhkb:sarah_stocks_1768 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1768 ;
+    fhkb:hasDeathYear 1829 ;
+    fhkb:isMotherOf fhkb:eleanor_harsley_1808,
+        fhkb:elizabeth_harsley_1803,
+        fhkb:john_harsley_1791,
+        fhkb:mary_harsley_1810,
+        fhkb:randall_harsley_1801,
+        fhkb:rebecca_harsley_1793 .
+
+fhkb:sarah_webb a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:caroline_bright_1822,
+        fhkb:edmund_bright_1813,
+        fhkb:eliza_bright_1825,
+        fhkb:harriet_bright_1811,
+        fhkb:james_bright_1809,
+        fhkb:jane_bright_1820,
+        fhkb:mary_ann_bright_1815,
+        fhkb:sarah_bright_1817,
+        fhkb:william_bright_1827 .
+
+fhkb:stephen_templar_1960 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1960 ;
+    fhkb:hasMother fhkb:vera_elm_1931 ;
+    fhkb:isBrotherOf fhkb:peter_templar_1962 .
+
+fhkb:susanna_walkerly_1777 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1777 ;
+    fhkb:hasDeathYear 1853 ;
+    fhkb:isMotherOf fhkb:ann_pickard_1809,
+        fhkb:elizabeth_pickard_1805,
+        fhkb:richard_pickard_1807,
+        fhkb:susanna_pickard_1803,
+        fhkb:william_pickard_1805 .
+
+fhkb:susanna_wife_of_william_cotton a owl:NamedIndividual ;
+    fhkb:isMotherOf fhkb:john_cotton_1778 .
+
+fhkb:thomas_burton_1765 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1765 ;
+    fhkb:isFatherOf fhkb:bethia_burton_1821,
+        fhkb:jane_burton_1823,
+        fhkb:martha_taylor_burton_1816,
+        fhkb:thomas_burton_1826 .
+
+fhkb:thomas_hayden_terliven_1838 a owl:NamedIndividual .
+
+fhkb:tom_pinchbeck a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:celia_pinchbeck_1949 .
+
+fhkb:william_bright_2001 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 2001 ;
+    fhkb:hasFather fhkb:james_bright_1964 .
+
+fhkb:william_cotton a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:john_cotton_1778 .
+
+fhkb:william_green a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:ann_green_1806,
+        fhkb:john_green_1802,
+        fhkb:mary_green_1803,
+        fhkb:rebecca_green_1800,
+        fhkb:tamar_green_1810,
+        fhkb:william_green_1813,
+        fhkb:zilpah_green_1810 .
+
+fhkb:william_hewett a owl:NamedIndividual .
+
+fhkb:william_ingelby_1789 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1790 ;
+    fhkb:hasDeathYear 1866 ;
+    fhkb:isFatherOf fhkb:frances_elizabeth_ingelby_1816,
+        fhkb:george_ingelby_1814,
+        fhkb:james_ingelby_1811,
+        fhkb:sarah_ingelby_1821 .
+
+fhkb:william_steward_1766 a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:ellen_steward_1797,
+        fhkb:hannah_steward_1801,
+        fhkb:james_steward_1798,
+        fhkb:john_steward_1802,
+        fhkb:mark_steward_1811,
+        fhkb:william_steward_1799 .
+
+fhkb:william_tubb_1786 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1786 ;
+    fhkb:isFatherOf fhkb:edward_tubb_1827,
+        fhkb:henry_tubb_1825,
+        fhkb:james_tubb_1809,
+        fhkb:john_tubb_1816,
+        fhkb:mary_tubb_1814,
+        fhkb:samuel_tubb_1811,
+        fhkb:sarah_jane_tubb_1812,
+        fhkb:thomas_tubb_1820,
+        fhkb:william_tubb_1808 .
+
+fhkb:yvonne_archer_1940 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1940 ;
+    fhkb:hasBrother fhkb:ian_alexander_archer_1944,
+        fhkb:james_keith_archer_1946 ;
+    fhkb:hasFather fhkb:norman_james_archer_1909 ;
+    fhkb:hasSister fhkb:jean_margaret_archer_1934 .
+
+fhkb:DomainEntity a owl:Class .
+
+fhkb:alan_john_dowse_1936 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1936 ;
+    fhkb:hasMother fhkb:ethel_archer_1912 .
+
+fhkb:andrew_usher_1965 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1965 ;
+    fhkb:hasMother fhkb:patricia_ann_kingswood_1944 ;
+    fhkb:isBrotherOf fhkb:amanda_usher_1968 .
+
+fhkb:ann_jacobs_1832 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1832 ;
+    fhkb:isSisterOf fhkb:frank_jacobs_1846 .
+
+fhkb:ann_james a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1790 ;
+    fhkb:hasDeathYear 1854 ;
+    fhkb:isMotherOf fhkb:frances_elizabeth_ingelby_1816,
+        fhkb:george_ingelby_1814,
+        fhkb:james_ingelby_1811,
+        fhkb:sarah_ingelby_1821 .
+
+fhkb:caroline_bright_1845 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1845 ;
+    fhkb:isSisterOf fhkb:sarah_rebecca_bright_1849 .
+
+fhkb:charles_jacobs_1842 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1842 ;
+    fhkb:isBrotherOf fhkb:fanny_jacobs_1840 .
+
+fhkb:charles_jessop_1831 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1831 ;
+    fhkb:hasSister fhkb:amelia_jessop_1837,
+        fhkb:ann_jessop_1833,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:mary_jessop_1840 ;
+    fhkb:isBrotherOf fhkb:james_jessop_1836,
+        fhkb:john_jessop_1834 .
+
+fhkb:dereck_heath_1929 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1929 ;
+    fhkb:isMalePartnerIn fhkb:m118 .
+
+fhkb:eden_georgina_gardner_thompson_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:isMotherOf fhkb:elizabeth_ann_lockey_1846,
+        fhkb:john_lockey_1840,
+        fhkb:ridman_lockey_1842,
+        fhkb:sarah_lockey_1848 ;
+    rdfs:comment "Illegitimate daughter of Catherinme thompson; george_gardener is suspected to be the father." .
+
+fhkb:edmund_charles_bright_1852 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1852 ;
+    fhkb:hasSister fhkb:eliza_bright_1842 ;
+    fhkb:isBrotherOf fhkb:james_bright_1839 .
+
+fhkb:edward_jessop_1802 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1802 ;
+    fhkb:isFatherOf fhkb:amelia_jessop_1837,
+        fhkb:ann_jessop_1833,
+        fhkb:charles_jessop_1831,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:james_jessop_1836,
+        fhkb:john_jessop_1834,
+        fhkb:mary_jessop_1840 .
+
+fhkb:ellen_archer_1875 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1875 ;
+    fhkb:isSisterOf fhkb:james_archer_1887 .
+
+fhkb:florelle_nenuphar_heath_1880 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1880 ;
+    fhkb:hasBrother fhkb:clarence_john_heath_1896,
+        fhkb:lemuel_frederic_heath_1891,
+        fhkb:sydney_victor_heath_1899,
+        fhkb:william_alfred_heath_1885 ;
+    fhkb:hasSister fhkb:iris_maud_gertrude_heath_1901,
+        fhkb:ivy_grace_heath_1894,
+        fhkb:violet_heath_1887 ;
+    fhkb:isSisterOf fhkb:daisy_harriet_heath_1889 .
+
+fhkb:frank_terliven_1877 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1877 ;
+    fhkb:isBrotherOf fhkb:maria_jane_terliven_1875 .
+
+fhkb:george_archer_1760 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1760 ;
+    fhkb:isBrotherOf fhkb:james_archer_1757 .
+
+fhkb:george_jacobs_1852 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1852 ;
+    fhkb:isBrotherOf fhkb:henry_jacobs_1849 .
+
+fhkb:george_stafford_1807 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1807 ;
+    fhkb:isBrotherOf fhkb:james_stafford_1803 .
+
+fhkb:harry_bright_hostler a owl:NamedIndividual ;
+    fhkb:hasBrother fhkb:robert_jerome_hostler ;
+    fhkb:hasFather fhkb:alfred_hostler ;
+    fhkb:hasMother fhkb:charlotte_caroline_jane_bright_1894 ;
+    fhkb:hasSister fhkb:edna_hostler,
+        fhkb:ruth_hostler ;
+    fhkb:knownAs "Steven" .
+
+fhkb:helen_archer_1955 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1955 ;
+    fhkb:hasFather fhkb:alec_john_archer_1927 ;
+    fhkb:isSisterOf fhkb:anne_archer_1964 .
+
+fhkb:ian_alexander_archer_1944 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1944 ;
+    fhkb:hasFather fhkb:norman_james_archer_1909 .
+
+fhkb:isAncestorOf a owl:ObjectProperty .
+
+fhkb:isBrotherOf a owl:IrreflexiveProperty,
+        owl:ObjectProperty ;
+    rdfs:domain fhkb:Man ;
+    rdfs:range fhkb:Person ;
+    rdfs:subPropertyOf fhkb:isSiblingOf .
+
+fhkb:isFemalePartnerIn a owl:ObjectProperty .
+
+fhkb:isMalePartnerIn a owl:ObjectProperty .
+
+fhkb:isWifeOf a owl:ObjectProperty .
+
+fhkb:james_hewett_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 ;
+    fhkb:isBrotherOf fhkb:mary_ann_hewett_1852 .
+
+fhkb:jane_archer a owl:NamedIndividual ;
+    fhkb:isSisterOf fhkb:william_archer_1801 .
+
+fhkb:jane_burton_1823 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1823 ;
+    fhkb:isMotherOf fhkb:charlotte_hewett_1863,
+        fhkb:elisa_amelia_hewett_1858,
+        fhkb:emma_hewett_1860,
+        fhkb:james_hewett_1850,
+        fhkb:jane_hewett_1849,
+        fhkb:john_james_hewett_1845,
+        fhkb:mary_ann_hewett_1852,
+        fhkb:rosena_martha_hewett_1847 .
+
+fhkb:jean_margaret_archer_1934 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1934 ;
+    fhkb:hasFather fhkb:norman_james_archer_1909 .
+
+fhkb:john_william_folland a fhkb:Person,
+        owl:NamedIndividual .
+
+fhkb:june_dowse_1941 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1941 ;
+    fhkb:hasMother fhkb:ethel_archer_1912 .
+
+fhkb:katherine_emma_terliven_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 ;
+    fhkb:isSisterOf fhkb:mary_elizabeth_terliven_1869 .
+
+fhkb:m118 a owl:NamedIndividual .
+
+fhkb:m133 a owl:NamedIndividual .
+
+fhkb:m134 a owl:NamedIndividual .
+
+fhkb:maria_jane_terliven_1875 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1875 ;
+    fhkb:isSisterOf fhkb:william_robert_terliven_1873 .
+
+fhkb:martha_ann_bright_1835 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1835 ;
+    fhkb:isSisterOf fhkb:james_bright_1839 .
+
+fhkb:mary_archer_1885 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1885 ;
+    fhkb:isSisterOf fhkb:james_alexander_archer_1882 .
+
+fhkb:mary_bainton_1780 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1780 ;
+    fhkb:isMotherOf fhkb:mary_tacey_1808,
+        fhkb:mary_tacey_1809,
+        fhkb:mary_tacey_1811,
+        fhkb:thomas_tacey_1806,
+        fhkb:william_tacey_1818 .
+
+fhkb:mary_dickens_1802 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1802 ;
+    fhkb:isSisterOf fhkb:sarah_dickens_1801 .
+
+fhkb:mary_elizabeth_terliven_1869 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1869 ;
+    fhkb:isSisterOf fhkb:thomas_john_terliven_1867 .
+
+fhkb:nellie_louise_terliven_1880 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1880 ;
+    fhkb:isSisterOf fhkb:frank_terliven_1877 .
+
+fhkb:nicholas_charles_heath_1964 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1964 ;
+    fhkb:hasFather fhkb:dereck_heath_1929 ;
+    fhkb:hasMother fhkb:eileen_mary_rever_1929 ;
+    fhkb:isBrotherOf fhkb:mark_anthony_heath_1960 .
+
+fhkb:patricia_ann_kingswood_1944 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1944 ;
+    fhkb:hasMother fhkb:rose_evlyn_rever_1906 .
+
+fhkb:rhiannon_brown_1969 a fhkb:Woman,
+        owl:NamedIndividual ;
+    fhkb:hasBirthYear 1969 .
+
+fhkb:roy_cleife_1944 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1944 ;
+    fhkb:hasMother fhkb:joyce_archer_1921 .
+
+fhkb:sarah_hewett_1815 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1815 ;
+    fhkb:isSisterOf fhkb:robert_hewett_1807 .
+
+fhkb:sheila_cleife_1949 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1949 ;
+    fhkb:hasMother fhkb:joyce_archer_1921 .
+
+fhkb:thomas_burton_1826 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1826 ;
+    fhkb:isBrotherOf fhkb:bethia_burton_1821 .
+
+fhkb:thomas_john_bright_1988 a owl:NamedIndividual ;
+    fhkb:isBrotherOf fhkb:avril_bright_1990 .
+
+fhkb:thomas_john_terliven_1867 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1867 ;
+    fhkb:isBrotherOf fhkb:nellie_louise_terliven_1880 .
+
+fhkb:vera_elm_1931 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1931 ;
+    fhkb:hasMother fhkb:mabel_rever_1897 .
+
+fhkb:william_archer_1832 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1832 ;
+    fhkb:isBrotherOf fhkb:dorothy_archer_1845 .
+
+fhkb:william_rever_1870 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1870 ;
+    fhkb:hasDeathYear 1941 ;
+    fhkb:isFatherOf fhkb:beatrice_rever_1901,
+        fhkb:charles_herbert_rever_1895,
+        fhkb:mabel_rever_1897,
+        fhkb:rose_evlyn_rever_1906,
+        fhkb:vera_gertrude_rever_1904,
+        fhkb:william_stanley_rever_1899 .
+
+fhkb:william_robert_terliven_1873 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1873 ;
+    fhkb:isBrotherOf fhkb:katherine_emma_terliven_1871 .
+
+fhkb:Female a owl:Class ;
+    rdfs:subClassOf fhkb:Sex ;
+    owl:disjointWith fhkb:Male .
+
+fhkb:Marriage a owl:Class ;
+    rdfs:subClassOf fhkb:DomainEntity ;
+    owl:disjointWith fhkb:Woman .
+
+fhkb:ada_rachel_heath_1868 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1868 ;
+    fhkb:isSisterOf fhkb:gwendoline_heath_1878 .
+
+fhkb:anne_archer_1964 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1964 ;
+    fhkb:hasFather fhkb:alec_john_archer_1927 .
+
+fhkb:bethia_burton_1821 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1821 ;
+    fhkb:isSisterOf fhkb:thomas_burton_1826 .
+
+fhkb:caroline_martha_bright_1864 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1864 ;
+    fhkb:hasBrother fhkb:henry_edmund_bright_1862,
+        fhkb:james_samuel_bright_1860 .
+
+fhkb:celia_pinchbeck_1949 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1949 ;
+    fhkb:isMotherOf fhkb:rhiannon_brown_1969 .
+
+fhkb:charlotte_hewett_1863 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1863 ;
+    fhkb:hasDeathYear 1940 ;
+    fhkb:isMotherOf fhkb:charlotte_caroline_jane_bright_1894,
+        fhkb:frederick_herbert_bright_1889,
+        fhkb:henry_edmund_bright_1887,
+        fhkb:james_frank_hayden_bright_1891,
+        fhkb:kathleen_minnie_bright_1904,
+        fhkb:leonard_john_bright_1890,
+        fhkb:nora_ada_bright_1899,
+        fhkb:william_george_bright_1901 .
+
+fhkb:christopher_archer_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 ;
+    fhkb:isBrotherOf fhkb:thomas_archer_1849 .
+
+fhkb:clarence_john_heath_1896 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1896 .
+
+fhkb:daisy_harriet_heath_1889 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1889 ;
+    fhkb:isSisterOf fhkb:violet_heath_1887 .
+
+fhkb:edna_hostler a owl:NamedIndividual ;
+    fhkb:hasBrother fhkb:robert_jerome_hostler ;
+    fhkb:hasFather fhkb:alfred_hostler ;
+    fhkb:hasMother fhkb:charlotte_caroline_jane_bright_1894 ;
+    fhkb:hasSister fhkb:ruth_hostler .
+
+fhkb:edward_jessop_1867 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1867 ;
+    fhkb:isBrotherOf fhkb:herbert_vincent_jessop_1871 .
+
+fhkb:eleanor_harsley_1808 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1808 ;
+    fhkb:hasBrother fhkb:john_harsley_1791,
+        fhkb:randall_harsley_1801 ;
+    fhkb:hasDeathYear 1869 ;
+    fhkb:hasSister fhkb:elizabeth_harsley_1803,
+        fhkb:mary_harsley_1810,
+        fhkb:rebecca_harsley_1793 ;
+    fhkb:isMotherOf fhkb:alfred_steward_1846,
+        fhkb:caroline_steward_1853,
+        fhkb:elizabeth_steward_1850,
+        fhkb:ellen_steward_1844,
+        fhkb:george_steward_1835,
+        fhkb:harsley_steward_1839,
+        fhkb:houghton_steward_1841,
+        fhkb:james_steward_1830,
+        fhkb:john_steward_1833,
+        fhkb:joseph_steward_1837,
+        fhkb:sarah_steward_1849,
+        fhkb:william_steward_1827 ;
+    fhkb:knownAs "Ellen" .
+
+fhkb:elisa_amelia_hewett_1858 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1858 ;
+    fhkb:isSisterOf fhkb:emma_hewett_1860 .
+
+fhkb:elizabeth_ann_lockey_1846 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1846 ;
+    fhkb:hasSister fhkb:sarah_lockey_1848 .
+
+fhkb:elizabeth_archer_1843 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1843 ;
+    fhkb:isSisterOf fhkb:dorothy_archer_1845 .
+
+fhkb:elizabeth_blanchard_1807 a owl:NamedIndividual ;
+    fhkb:formerlyKnownAs "elizabeth hutchinson" ;
+    fhkb:hasBirthYear 1807 ;
+    fhkb:hasDeathYear 1888 ;
+    fhkb:isMotherOf fhkb:charlotte_cotton_1840,
+        fhkb:edward_cotton_1850,
+        fhkb:elizabeth_cotton_1838,
+        fhkb:frances_cotton_1834,
+        fhkb:john_cotton_1842,
+        fhkb:martha_cotton_1832,
+        fhkb:mary_ann_cotton_1847,
+        fhkb:rebecca_cotton_1845,
+        fhkb:susanna_cotton_1836 .
+
+fhkb:ellen_steward_1797 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1797 ;
+    fhkb:hasBrother fhkb:james_steward_1798,
+        fhkb:john_steward_1802,
+        fhkb:mark_steward_1811,
+        fhkb:william_steward_1799 ;
+    fhkb:hasSister fhkb:hannah_steward_1801 .
+
+fhkb:elma_ellen_story_1893 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1893 ;
+    fhkb:hasDeathYear 1964 ;
+    fhkb:isMotherOf fhkb:vera_tuton_1920 .
+
+fhkb:emma_hewett_1860 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1860 ;
+    fhkb:isSisterOf fhkb:elisa_amelia_hewett_1858 .
+
+fhkb:fanny_jacobs_1840 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1840 ;
+    fhkb:isSisterOf fhkb:jane_jacobs_1836 .
+
+fhkb:frank_jacobs_1846 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1846 ;
+    fhkb:isBrotherOf fhkb:lucy_jacobs_1844 .
+
+fhkb:george_green_1834 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1834 ;
+    fhkb:hasBrother fhkb:henry_green_1836,
+        fhkb:john_green_1843 ;
+    fhkb:hasSister fhkb:hannah_green_1839,
+        fhkb:mary_ann_green_1841,
+        fhkb:mary_ann_green_1846 .
+
+fhkb:george_ingelby_1814 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1814 ;
+    fhkb:hasBrother fhkb:james_ingelby_1811 ;
+    fhkb:hasSister fhkb:frances_elizabeth_ingelby_1816,
+        fhkb:sarah_ingelby_1821 .
+
+fhkb:george_tacey_1831 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1831 ;
+    fhkb:hasBrother fhkb:john_william_tacey_1841 ;
+    fhkb:hasSister fhkb:susannah_tacey_1834 ;
+    fhkb:isBrotherOf fhkb:matthew_tacey_1837 .
+
+fhkb:hannah_hutchinson_1804 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1804 ;
+    fhkb:hasDeathYear 1865 ;
+    fhkb:isMotherOf fhkb:george_green_1834,
+        fhkb:hannah_green_1839,
+        fhkb:henry_green_1836,
+        fhkb:john_green_1843,
+        fhkb:mary_ann_green_1841,
+        fhkb:mary_ann_green_1846 ;
+    fhkb:knownAs "fanny" .
+
+fhkb:harsley_steward_1839 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1839 ;
+    fhkb:hasBrother fhkb:alfred_steward_1846,
+        fhkb:george_steward_1835,
+        fhkb:houghton_steward_1841,
+        fhkb:james_steward_1830,
+        fhkb:john_steward_1833,
+        fhkb:joseph_steward_1837,
+        fhkb:william_steward_1827 ;
+    fhkb:hasSister fhkb:caroline_steward_1853,
+        fhkb:elizabeth_steward_1850,
+        fhkb:ellen_steward_1844,
+        fhkb:sarah_steward_1849 .
+
+fhkb:henry_jacobs_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 ;
+    fhkb:isBrotherOf fhkb:sarah_jacobs_1834 .
+
+fhkb:herbert_vincent_jessop_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 ;
+    fhkb:isBrotherOf fhkb:charlotte_ann_jessop_1865 .
+
+fhkb:houghton_steward_1841 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1841 ;
+    fhkb:hasBrother fhkb:alfred_steward_1846,
+        fhkb:george_steward_1835,
+        fhkb:harsley_steward_1839,
+        fhkb:james_steward_1830,
+        fhkb:john_steward_1833,
+        fhkb:joseph_steward_1837,
+        fhkb:william_steward_1827 ;
+    fhkb:hasSister fhkb:caroline_steward_1853,
+        fhkb:elizabeth_steward_1850,
+        fhkb:ellen_steward_1844,
+        fhkb:sarah_steward_1849 .
+
+fhkb:iris_maud_gertrude_heath_1901 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1901 .
+
+fhkb:isSpouseOf a owl:ObjectProperty .
+
+fhkb:ivy_grace_heath_1894 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1894 .
+
+fhkb:james_archer_1757 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1757 ;
+    fhkb:isBrotherOf fhkb:william_archer_1764 .
+
+fhkb:james_archer_1840 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1840 ;
+    fhkb:isBrotherOf fhkb:elizabeth_archer_1843 .
+
+fhkb:james_archer_1887 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1887 ;
+    fhkb:isBrotherOf fhkb:lily_archer_1880 .
+
+fhkb:james_bright_1787 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1787 ;
+    fhkb:isFatherOf fhkb:caroline_bright_1822,
+        fhkb:edmund_bright_1813,
+        fhkb:eliza_bright_1825,
+        fhkb:harriet_bright_1811,
+        fhkb:james_bright_1809,
+        fhkb:jane_bright_1820,
+        fhkb:mary_ann_bright_1815,
+        fhkb:sarah_bright_1817,
+        fhkb:william_bright_1827 .
+
+fhkb:james_hollinsworth_1804 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1804 ;
+    fhkb:hasSister fhkb:ann_hollinsworth_1808,
+        fhkb:mary_hollingsworth_1801 .
+
+fhkb:james_jacobs_1806 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1806 ;
+    fhkb:hasDeathYear 1876 ;
+    fhkb:isFatherOf fhkb:charles_jacobs_1842,
+        fhkb:fanny_jacobs_1840,
+        fhkb:frank_jacobs_1846,
+        fhkb:george_jacobs_1852,
+        fhkb:henry_jacobs_1849,
+        fhkb:jane_jacobs_1836,
+        fhkb:lucy_jacobs_1844,
+        fhkb:sarah_jacobs_1834 .
+
+fhkb:james_samuel_bright_1860 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1860 ;
+    fhkb:hasBrother fhkb:henry_edmund_bright_1862 ;
+    fhkb:hasSister fhkb:caroline_martha_bright_1864 .
+
+fhkb:james_stafford_1803 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1803 ;
+    fhkb:hasSister fhkb:martha_stafford_1814,
+        fhkb:mary_ann_stafford_1810,
+        fhkb:rebecca_stafford_1816 ;
+    fhkb:isBrotherOf fhkb:john_hewson_stafford_1811 .
+
+fhkb:james_steward_1798 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1798 ;
+    fhkb:hasBrother fhkb:john_steward_1802,
+        fhkb:mark_steward_1811,
+        fhkb:william_steward_1799 ;
+    fhkb:hasSister fhkb:ellen_steward_1797,
+        fhkb:hannah_steward_1801 .
+
+fhkb:james_whitfield_1848 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1848 ;
+    fhkb:hasBrother fhkb:george_whitfield_1865,
+        fhkb:harry_whitfield_1854,
+        fhkb:walter_whitfield_1863,
+        fhkb:william_whitfield_1852 ;
+    fhkb:hasSister fhkb:alice_whitfield_1859,
+        fhkb:annie_whitfield,
+        fhkb:harriet_ann_whitfield_1850,
+        fhkb:harriet_whitefield_1861,
+        fhkb:louisa_whitfield_1857 .
+
+fhkb:jane_archer_1837 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1837 ;
+    fhkb:isSisterOf fhkb:james_archer_1840 .
+
+fhkb:jane_hewett_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 ;
+    fhkb:isSisterOf fhkb:john_james_hewett_1845 .
+
+fhkb:jane_jacobs_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 ;
+    fhkb:isSisterOf fhkb:ann_jacobs_1832 .
+
+fhkb:john_bright_1930 a owl:NamedIndividual ;
+    fhkb:hasFather fhkb:william_george_bright_1901 ;
+    fhkb:hasMother fhkb:iris_ellen_archer_1906 ;
+    fhkb:isBrotherOf fhkb:david_bright_1934,
+        fhkb:john_bright_1930 ;
+    fhkb:isFatherOf fhkb:ian_bright_1959,
+        fhkb:janet_bright_1964,
+        fhkb:mark_bright_1956,
+        fhkb:william_bright_1970 ;
+    fhkb:isMalePartnerIn fhkb:m133 .
+
+fhkb:john_cotton_1778 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1778 ;
+    fhkb:hasDeathYear 1862 ;
+    fhkb:isFatherOf fhkb:martha_cotton_1806,
+        fhkb:rebecca_cotton_1818,
+        fhkb:susannah_cotton_1813,
+        fhkb:vincent_cotton_1808,
+        fhkb:william_john_cotton_1804 .
+
+fhkb:john_english_archer a owl:NamedIndividual ;
+    fhkb:isBrotherOf fhkb:thomas_archer_1868 .
+
+fhkb:john_james_hewett_1845 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1845 ;
+    fhkb:isBrotherOf fhkb:rosena_martha_hewett_1847 .
+
+fhkb:john_lockey_1840 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1840 ;
+    fhkb:hasSister fhkb:elizabeth_ann_lockey_1846,
+        fhkb:sarah_lockey_1848 ;
+    fhkb:isBrotherOf fhkb:ridman_lockey_1842 .
+
+fhkb:lemuel_frederic_heath_1891 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1891 .
+
+fhkb:lemuel_frederick_heath_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 ;
+    fhkb:isBrotherOf fhkb:gwendoline_heath_1878 .
+
+fhkb:lily_archer_1880 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1880 ;
+    fhkb:isSisterOf fhkb:james_alexander_archer_1882 .
+
+fhkb:louisa_whitfield_1817 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1817 ;
+    fhkb:isSisterOf fhkb:robert_whitfield_1813 .
+
+fhkb:lucy_jacobs_1844 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1844 ;
+    fhkb:isSisterOf fhkb:ann_jacobs_1832 .
+
+fhkb:mark_anthony_heath_1960 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1960 ;
+    fhkb:hasFather fhkb:dereck_heath_1929 ;
+    fhkb:hasMother fhkb:eileen_mary_rever_1929 .
+
+fhkb:mary_ann_stafford_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:hasBrother fhkb:john_hewson_stafford_1811 ;
+    fhkb:hasSister fhkb:rebecca_stafford_1816 ;
+    fhkb:isSisterOf fhkb:martha_stafford_1814 .
+
+fhkb:mary_ann_whitfield_1824 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1824 .
+
+fhkb:mary_archer_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 ;
+    fhkb:isSisterOf fhkb:dorothy_archer_1845 .
+
+fhkb:mary_harsley_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:hasBrother fhkb:john_harsley_1791,
+        fhkb:randall_harsley_1801 ;
+    fhkb:hasSister fhkb:eleanor_harsley_1808,
+        fhkb:elizabeth_harsley_1803,
+        fhkb:rebecca_harsley_1793 .
+
+fhkb:mary_lockey_1818 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1818 ;
+    fhkb:hasBrother fhkb:george_baker_lockey_1812,
+        fhkb:henry_waterloo_lockey_1820,
+        fhkb:john_lockey_1824,
+        fhkb:joseph_lockey_1833,
+        fhkb:nicholas_lockey_1826,
+        fhkb:redman_lockey_1822,
+        fhkb:william_rivers_lockey_1815 ;
+    fhkb:hasSister fhkb:anne_lockey_1829,
+        fhkb:sarah_lockey_1810 .
+
+fhkb:mary_tacey_1808 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1808 ;
+    fhkb:hasBrother fhkb:thomas_tacey_1806,
+        fhkb:william_tacey_1818 ;
+    fhkb:hasSister fhkb:mary_tacey_1809,
+        fhkb:mary_tacey_1811 .
+
+fhkb:mary_tacey_1809 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1809 ;
+    fhkb:hasBrother fhkb:thomas_tacey_1806,
+        fhkb:william_tacey_1818 ;
+    fhkb:hasSister fhkb:mary_tacey_1808,
+        fhkb:mary_tacey_1811 .
+
+fhkb:peter_templar_1962 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1962 ;
+    fhkb:isSonOf fhkb:vera_elm_1931 .
+
+fhkb:rebecca_green_1800 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1800 .
+
+fhkb:ridman_lockey_1842 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1842 ;
+    fhkb:hasSister fhkb:sarah_lockey_1848 ;
+    fhkb:isBrotherOf fhkb:john_lockey_1840 .
+
+fhkb:robert_harvey a owl:NamedIndividual .
+
+fhkb:robert_jerome_hostler a owl:NamedIndividual ;
+    fhkb:hasBrother fhkb:harry_bright_hostler ;
+    fhkb:hasFather fhkb:alfred_hostler ;
+    fhkb:hasMother fhkb:charlotte_caroline_jane_bright_1894 ;
+    fhkb:hasSister fhkb:edna_hostler,
+        fhkb:ruth_hostler .
+
+fhkb:robert_whitfield_1813 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1813 ;
+    fhkb:hasBrother fhkb:james_whitfield_1821,
+        fhkb:thomas_william_whitfield_1826 ;
+    fhkb:hasSister fhkb:mary_ann_whitfield_1824,
+        fhkb:sarah_jane_whitfield_1818,
+        fhkb:sarah_jane_whitfield_1829 ;
+    fhkb:isBrotherOf fhkb:louisa_whitfield_1817 .
+
+fhkb:rosena_martha_hewett_1847 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1847 ;
+    fhkb:isSisterOf fhkb:mary_ann_hewett_1852 .
+
+fhkb:ruth_hostler a owl:NamedIndividual ;
+    fhkb:hasBrother fhkb:harry_bright_hostler,
+        fhkb:robert_jerome_hostler ;
+    fhkb:hasFather fhkb:alfred_hostler ;
+    fhkb:hasMother fhkb:charlotte_caroline_jane_bright_1894 ;
+    fhkb:hasSister fhkb:edna_hostler .
+
+fhkb:sarah_jane_whitfield_1818 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1818 .
+
+fhkb:sarah_jane_whitfield_1829 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1829 .
+
+fhkb:sarah_rebecca_bright_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 ;
+    fhkb:isSisterOf fhkb:eliza_bright_1842 .
+
+fhkb:susanna_pickard_1803 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1803 ;
+    fhkb:hasBrother fhkb:richard_pickard_1807,
+        fhkb:william_pickard_1805 ;
+    fhkb:hasSister fhkb:ann_pickard_1809,
+        fhkb:elizabeth_pickard_1805 .
+
+fhkb:susanna_pickard_1841 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1841 ;
+    fhkb:hasBrother fhkb:charles_pickard_1854,
+        fhkb:george_pickard_1847,
+        fhkb:ralph_pickard_1857 ;
+    fhkb:hasDeathYear 1919 ;
+    fhkb:hasSister fhkb:hannah_pickard_1844,
+        fhkb:harriet_ingelby_pickard_1858,
+        fhkb:sarah_pickard_1839 .
+
+fhkb:sydney_victor_heath_1899 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1899 .
+
+fhkb:tamar_green_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:hasBrother fhkb:john_green_1802,
+        fhkb:william_green_1813 ;
+    fhkb:hasSister fhkb:ann_green_1806,
+        fhkb:mary_green_1803,
+        fhkb:zilpah_green_1810 .
+
+fhkb:thomas_archer_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 ;
+    fhkb:isBrotherOf fhkb:mary_archer_1850 .
+
+fhkb:thomas_archer_1868 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1868 ;
+    fhkb:isBrotherOf fhkb:john_english_archer .
+
+fhkb:thomas_william_whitfield_1826 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1826 .
+
+fhkb:vera_tuton_1920 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1920 ;
+    fhkb:isMotherOf fhkb:celia_pinchbeck_1949 .
+
+fhkb:william_alfred_heath_1885 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1885 .
+
+fhkb:william_archer_1801 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1801 ;
+    fhkb:isBrotherOf fhkb:john_archer_1804 .
+
+fhkb:william_john_cotton_1804 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1804 ;
+    fhkb:hasBrother fhkb:vincent_cotton_1808 ;
+    fhkb:hasSister fhkb:martha_cotton_1806,
+        fhkb:rebecca_cotton_1818,
+        fhkb:susannah_cotton_1813 .
+
+fhkb:william_lock_jacobs_1861 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1861 ;
+    fhkb:isFatherOf fhkb:clarence_john_heath_1896,
+        fhkb:daisy_harriet_heath_1889,
+        fhkb:florelle_nenuphar_heath_1880,
+        fhkb:iris_maud_gertrude_heath_1901,
+        fhkb:ivy_grace_heath_1894,
+        fhkb:lemuel_frederic_heath_1891,
+        fhkb:sydney_victor_heath_1899,
+        fhkb:violet_heath_1887,
+        fhkb:william_alfred_heath_1885 ;
+    fhkb:knownAs "william heath" .
+
+fhkb:william_tacey_1783 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1783 ;
+    fhkb:hasDeathYear 1863 ;
+    fhkb:isFatherOf fhkb:mary_tacey_1808,
+        fhkb:mary_tacey_1809,
+        fhkb:mary_tacey_1811,
+        fhkb:thomas_tacey_1806,
+        fhkb:william_tacey_1818 .
+
+fhkb:Male a owl:Class ;
+    rdfs:subClassOf fhkb:Sex .
+
+fhkb:ada_steward_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 .
+
+fhkb:alfred_hostler a owl:NamedIndividual .
+
+fhkb:alfred_steward_1846 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1846 .
+
+fhkb:alice_whitfield_1859 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1859 .
+
+fhkb:amanda_usher_1968 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1968 ;
+    fhkb:hasMother fhkb:patricia_ann_kingswood_1944 ;
+    fhkb:isSisterOf fhkb:andrew_usher_1965 .
+
+fhkb:ann_green_1806 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1806 .
+
+fhkb:ann_hollinsworth_1808 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1808 .
+
+fhkb:ann_pickard_1809 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1809 .
+
+fhkb:anne_lockey_1829 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1829 .
+
+fhkb:annie_whitfield a owl:NamedIndividual .
+
+fhkb:arthur_steward_1861 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1861 .
+
+fhkb:beatrice_rever_1901 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1901 ;
+    fhkb:hasBrother fhkb:charles_herbert_rever_1895,
+        fhkb:william_stanley_rever_1899 ;
+    fhkb:hasSister fhkb:mabel_rever_1897,
+        fhkb:rose_evlyn_rever_1906,
+        fhkb:vera_gertrude_rever_1904 ;
+    fhkb:knownAs "Beatty" .
+
+fhkb:betsy_ann_steward_1865 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1865 .
+
+fhkb:caroline_steward_1853 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1853 .
+
+fhkb:catherine_steward_1863 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1863 .
+
+fhkb:charles_pickard_1854 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1854 .
+
+fhkb:charlotte_ann_jessop_1865 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1865 ;
+    fhkb:hasSister fhkb:elizabeth_frances_jessop_1869 ;
+    fhkb:isSisterOf fhkb:edward_jessop_1867 ;
+    fhkb:knownAs "Aunt Miserable" .
+
+fhkb:clare_bright_1966 a owl:NamedIndividual ;
+    fhkb:isSisterOf fhkb:james_bright_1964 .
+
+fhkb:edmund_bright_1813 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1813 ;
+    fhkb:hasBrother fhkb:james_bright_1809,
+        fhkb:william_bright_1827 ;
+    fhkb:hasSister fhkb:caroline_bright_1822,
+        fhkb:eliza_bright_1825,
+        fhkb:harriet_bright_1811,
+        fhkb:jane_bright_1820,
+        fhkb:mary_ann_bright_1815,
+        fhkb:sarah_bright_1817 .
+
+fhkb:edward_cotton_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 ;
+    fhkb:hasBrother fhkb:john_cotton_1842 ;
+    fhkb:hasSister fhkb:charlotte_cotton_1840,
+        fhkb:elizabeth_cotton_1838,
+        fhkb:frances_cotton_1834,
+        fhkb:martha_cotton_1832,
+        fhkb:mary_ann_cotton_1847,
+        fhkb:rebecca_cotton_1845,
+        fhkb:susanna_cotton_1836 .
+
+fhkb:edward_young_1821 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1821 ;
+    fhkb:hasBrother fhkb:henry_young_1831,
+        fhkb:james_young_1836,
+        fhkb:john_young_1827,
+        fhkb:samuel_young_1829,
+        fhkb:william_young_1823 ;
+    fhkb:hasSister fhkb:harriet_ann_young_1825 .
+
+fhkb:eliza_bright_1842 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1842 .
+
+fhkb:elizabeth_frances_jessop_1869 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1869 ;
+    fhkb:isMotherOf fhkb:beatrice_rever_1901,
+        fhkb:charles_herbert_rever_1895,
+        fhkb:mabel_rever_1897,
+        fhkb:rose_evlyn_rever_1906,
+        fhkb:vera_gertrude_rever_1904,
+        fhkb:william_stanley_rever_1899 .
+
+fhkb:elizabeth_harsley_1803 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1803 .
+
+fhkb:elizabeth_pickard_1805 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1805 .
+
+fhkb:elizabeth_steward_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 .
+
+fhkb:ellen_steward_1844 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1844 .
+
+fhkb:emma_jane_tubb_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 ;
+    fhkb:hasBrother fhkb:samuel_tubb_1832,
+        fhkb:thomas_andrew_tubb_1838 ;
+    fhkb:hasSister fhkb:caroline_lavinia_tubb_1840 .
+
+fhkb:fred_steward_1869 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1869 .
+
+fhkb:frederick_herbert_bright_1889 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1889 ;
+    fhkb:hasBrother fhkb:henry_edmund_bright_1887,
+        fhkb:james_frank_hayden_bright_1891,
+        fhkb:leonard_john_bright_1890,
+        fhkb:william_george_bright_1901 ;
+    fhkb:hasSister fhkb:charlotte_caroline_jane_bright_1894,
+        fhkb:kathleen_minnie_bright_1904,
+        fhkb:nora_ada_bright_1899 .
+
+fhkb:george_baker_lockey_1812 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1812 .
+
+fhkb:george_pickard_1847 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1847 .
+
+fhkb:george_steward_1835 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1835 .
+
+fhkb:george_steward_1856 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1856 .
+
+fhkb:george_whitfield_1865 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1865 .
+
+fhkb:hannah_green_1839 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1839 .
+
+fhkb:hannah_pickard_1844 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1844 .
+
+fhkb:hannah_steward_1801 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1801 .
+
+fhkb:harriet_ann_whitfield_1850 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1850 ;
+    fhkb:hasDeathYear 1852 .
+
+fhkb:harriet_bright_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 ;
+    fhkb:hasBrother fhkb:edmund_bright_1813,
+        fhkb:james_bright_1809,
+        fhkb:william_bright_1827 ;
+    fhkb:hasSister fhkb:caroline_bright_1822,
+        fhkb:eliza_bright_1825,
+        fhkb:jane_bright_1820,
+        fhkb:mary_ann_bright_1815,
+        fhkb:sarah_bright_1817 .
+
+fhkb:harriet_ingelby_pickard_1858 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1858 .
+
+fhkb:harriet_whitefield_1861 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1861 ;
+    fhkb:hasBrother fhkb:george_whitfield_1865,
+        fhkb:harry_whitfield_1854,
+        fhkb:james_whitfield_1848,
+        fhkb:walter_whitfield_1863,
+        fhkb:william_whitfield_1852 ;
+    fhkb:hasDeathYear 1930 ;
+    fhkb:hasSister fhkb:alice_whitfield_1859,
+        fhkb:annie_whitfield,
+        fhkb:harriet_ann_whitfield_1850,
+        fhkb:louisa_whitfield_1857 ;
+    fhkb:isMotherOf fhkb:clarence_john_heath_1896,
+        fhkb:daisy_harriet_heath_1889,
+        fhkb:florelle_nenuphar_heath_1880,
+        fhkb:iris_maud_gertrude_heath_1901,
+        fhkb:ivy_grace_heath_1894,
+        fhkb:lemuel_frederic_heath_1891,
+        fhkb:sydney_victor_heath_1899,
+        fhkb:violet_heath_1887,
+        fhkb:william_alfred_heath_1885 .
+
+fhkb:harry_whitfield_1854 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1854 .
+
+fhkb:henrietta_sarah_green_1873 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1873 ;
+    fhkb:hasBrother fhkb:frank_reginald_green_1883,
+        fhkb:william_henry_hutchinson_green_1875 ;
+    fhkb:hasSister fhkb:eleanor_frances_green_1863,
+        fhkb:elizabeth_quincey_green_1886,
+        fhkb:lois_green_1871,
+        fhkb:mary_kate_green_1865,
+        fhkb:minnie_green_1871 .
+
+fhkb:henry_edmund_bright_1887 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1887 ;
+    fhkb:hasBrother fhkb:frederick_herbert_bright_1889,
+        fhkb:james_frank_hayden_bright_1891,
+        fhkb:leonard_john_bright_1890,
+        fhkb:william_george_bright_1901 ;
+    fhkb:hasSister fhkb:charlotte_caroline_jane_bright_1894,
+        fhkb:kathleen_minnie_bright_1904,
+        fhkb:nora_ada_bright_1899 .
+
+fhkb:henry_green_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 ;
+    fhkb:hasBrother fhkb:frank_reginald_green_1883,
+        fhkb:george_green_1834,
+        fhkb:john_green_1843,
+        fhkb:william_henry_hutchinson_green_1875 ;
+    fhkb:hasDeathYear 1921 ;
+    fhkb:hasSister fhkb:eleanor_frances_green_1863,
+        fhkb:elizabeth_quincey_green_1886,
+        fhkb:hannah_green_1839,
+        fhkb:henrietta_sarah_green_1873,
+        fhkb:lois_green_1871,
+        fhkb:mary_ann_green_1841,
+        fhkb:mary_ann_green_1846,
+        fhkb:mary_kate_green_1865,
+        fhkb:minnie_green_1871 ;
+    fhkb:isFatherOf fhkb:eleanor_frances_green_1863,
+        fhkb:elizabeth_quincey_green_1886,
+        fhkb:frank_reginald_green_1883,
+        fhkb:henrietta_sarah_green_1873,
+        fhkb:lois_green_1871,
+        fhkb:mary_kate_green_1865,
+        fhkb:minnie_green_1871,
+        fhkb:william_henry_hutchinson_green_1875 .
+
+fhkb:henry_waterloo_lockey_1820 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1820 .
+
+fhkb:ian_bright_1959 a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:thomas_john_bright_1988 .
+
+fhkb:james_ingelby_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 .
+
+fhkb:james_tubb_1809 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1809 ;
+    fhkb:hasBrother fhkb:edward_tubb_1827,
+        fhkb:henry_tubb_1825,
+        fhkb:john_tubb_1816,
+        fhkb:samuel_tubb_1811,
+        fhkb:thomas_tubb_1820,
+        fhkb:william_tubb_1808 ;
+    fhkb:hasSister fhkb:mary_tubb_1814,
+        fhkb:sarah_jane_tubb_1812 .
+
+fhkb:james_whitfield_1821 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1821 ;
+    fhkb:hasDeathYear 1886 ;
+    fhkb:isFatherOf fhkb:alice_whitfield_1859,
+        fhkb:annie_whitfield,
+        fhkb:george_whitfield_1865,
+        fhkb:harriet_ann_whitfield_1850,
+        fhkb:harriet_whitefield_1861,
+        fhkb:harry_whitfield_1854,
+        fhkb:james_whitfield_1848,
+        fhkb:louisa_whitfield_1857,
+        fhkb:walter_whitfield_1863,
+        fhkb:william_whitfield_1852 .
+
+fhkb:john_archer_1804 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1804 ;
+    fhkb:isFatherOf fhkb:christopher_archer_1849,
+        fhkb:dorothy_archer_1845,
+        fhkb:elizabeth_archer_1843,
+        fhkb:james_archer_1840,
+        fhkb:jane_archer_1837,
+        fhkb:john_archer_1835,
+        fhkb:mary_archer_1850,
+        fhkb:thomas_archer_1849,
+        fhkb:william_archer_1832 .
+
+fhkb:john_green_1802 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1802 .
+
+fhkb:john_green_1843 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1843 .
+
+fhkb:john_harsley_1791 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1791 .
+
+fhkb:john_hewson_stafford_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 .
+
+fhkb:john_lockey_1824 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1824 .
+
+fhkb:john_steward_1833 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1833 .
+
+fhkb:john_tacey_steward_1873 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1873 ;
+    fhkb:hasBrother fhkb:arthur_steward_1861,
+        fhkb:fred_steward_1869,
+        fhkb:george_steward_1856,
+        fhkb:thomas_henry_steward_1874 ;
+    fhkb:hasDeathYear 1938 ;
+    fhkb:hasSister fhkb:ada_steward_1871,
+        fhkb:betsy_ann_steward_1865,
+        fhkb:catherine_steward_1863,
+        fhkb:laura_steward_1859,
+        fhkb:mary_ellen_steward_1855 ;
+    fhkb:isFatherOf fhkb:minnie_maud_steward_1909,
+        fhkb:reginald_tacey_steward_1895,
+        fhkb:richard_henry_steward_1897,
+        fhkb:violet_sylvia_steward_1894 .
+
+fhkb:john_william_tacey_1841 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1841 .
+
+fhkb:john_young_1827 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1827 .
+
+fhkb:joseph_lockey_1833 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1833 .
+
+fhkb:joseph_steward_1837 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1837 .
+
+fhkb:julie_bright_1966 a owl:NamedIndividual ;
+    fhkb:isSisterOf fhkb:james_bright_1964 .
+
+fhkb:laura_steward_1859 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1859 .
+
+fhkb:leonard_john_bright_1890 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1890 ;
+    fhkb:hasBrother fhkb:frederick_herbert_bright_1889,
+        fhkb:henry_edmund_bright_1887,
+        fhkb:james_frank_hayden_bright_1891,
+        fhkb:william_george_bright_1901 ;
+    fhkb:hasSister fhkb:charlotte_caroline_jane_bright_1894,
+        fhkb:kathleen_minnie_bright_1904,
+        fhkb:nora_ada_bright_1899 .
+
+fhkb:louisa_whitfield_1857 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1857 .
+
+fhkb:mark_bright_1956 a owl:NamedIndividual ;
+    fhkb:isBrotherOf fhkb:ian_bright_1959,
+        fhkb:janet_bright_1964,
+        fhkb:william_bright_1970 .
+
+fhkb:mark_steward_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 .
+
+fhkb:martha_cotton_1806 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1806 ;
+    fhkb:hasBrother fhkb:vincent_cotton_1808,
+        fhkb:william_john_cotton_1804 ;
+    fhkb:hasSister fhkb:martha_cotton_1806,
+        fhkb:rebecca_cotton_1818,
+        fhkb:susannah_cotton_1813 .
+
+fhkb:mary_ann_bright_1815 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1815 ;
+    fhkb:hasBrother fhkb:edmund_bright_1813,
+        fhkb:james_bright_1809,
+        fhkb:william_bright_1827 ;
+    fhkb:hasSister fhkb:caroline_bright_1822,
+        fhkb:eliza_bright_1825,
+        fhkb:harriet_bright_1811,
+        fhkb:jane_bright_1820,
+        fhkb:sarah_bright_1817 .
+
+fhkb:mary_ann_cotton_1847 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1847 ;
+    fhkb:hasBrother fhkb:edward_cotton_1850,
+        fhkb:john_cotton_1842 ;
+    fhkb:hasSister fhkb:charlotte_cotton_1840,
+        fhkb:elizabeth_cotton_1838,
+        fhkb:frances_cotton_1834,
+        fhkb:martha_cotton_1832,
+        fhkb:rebecca_cotton_1845,
+        fhkb:susanna_cotton_1836 .
+
+fhkb:mary_ann_green_1841 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1841 .
+
+fhkb:mary_ann_green_1846 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1846 .
+
+fhkb:mary_ann_hewett_1852 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1852 ;
+    fhkb:isSisterOf fhkb:jane_hewett_1849 .
+
+fhkb:mary_ellen_steward_1855 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1855 ;
+    fhkb:hasBrother fhkb:arthur_steward_1861,
+        fhkb:fred_steward_1869,
+        fhkb:george_steward_1856,
+        fhkb:john_tacey_steward_1873,
+        fhkb:thomas_henry_steward_1874 ;
+    fhkb:hasDeathYear 1935 ;
+    fhkb:hasSister fhkb:ada_steward_1871,
+        fhkb:betsy_ann_steward_1865,
+        fhkb:catherine_steward_1863,
+        fhkb:laura_steward_1859 ;
+    fhkb:isMotherOf fhkb:elma_ellen_story_1893 .
+
+fhkb:mary_green_1803 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1803 .
+
+fhkb:mary_hollingsworth_1801 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1801 ;
+    fhkb:hasBrother fhkb:james_hollinsworth_1804 ;
+    fhkb:hasDeathYear 1895 ;
+    fhkb:hasSister fhkb:ann_hollinsworth_1808 ;
+    fhkb:isMotherOf fhkb:george_tacey_1831,
+        fhkb:john_william_tacey_1841,
+        fhkb:matthew_tacey_1837,
+        fhkb:susannah_tacey_1834 .
+
+fhkb:mary_tacey_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 .
+
+fhkb:matthew_tacey_1837 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1837 ;
+    fhkb:isBrotherOf fhkb:george_tacey_1831 .
+
+fhkb:minnie_maud_steward_1909 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1909 ;
+    fhkb:hasBrother fhkb:reginald_tacey_steward_1895,
+        fhkb:richard_henry_steward_1897 ;
+    fhkb:hasSister fhkb:violet_sylvia_steward_1894 .
+
+fhkb:nicholas_lockey_1826 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1826 .
+
+fhkb:ralph_pickard_1857 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1857 .
+
+fhkb:randall_harsley_1801 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1801 .
+
+fhkb:rebecca_cotton_1818 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1818 .
+
+fhkb:rebecca_cotton_1845 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1845 ;
+    fhkb:hasBrother fhkb:edward_cotton_1850,
+        fhkb:john_cotton_1842 ;
+    fhkb:hasSister fhkb:charlotte_cotton_1840,
+        fhkb:elizabeth_cotton_1838,
+        fhkb:frances_cotton_1834,
+        fhkb:martha_cotton_1832,
+        fhkb:mary_ann_cotton_1847,
+        fhkb:susanna_cotton_1836 .
+
+fhkb:rebecca_harsley_1793 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1793 .
+
+fhkb:rebecca_stafford_1816 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1816 .
+
+fhkb:redman_lockey_1822 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1822 .
+
+fhkb:richard_henry_steward_1897 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1897 ;
+    fhkb:hasBrother fhkb:reginald_tacey_steward_1895 ;
+    fhkb:hasDeathYear 1917 ;
+    fhkb:hasSister fhkb:minnie_maud_steward_1909,
+        fhkb:violet_sylvia_steward_1894 .
+
+fhkb:richard_pickard_1807 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1807 ;
+    fhkb:hasBrother fhkb:william_pickard_1805 ;
+    fhkb:hasDeathYear 1877 ;
+    fhkb:hasSister fhkb:ann_pickard_1809,
+        fhkb:elizabeth_pickard_1805,
+        fhkb:susanna_pickard_1803 ;
+    fhkb:isFatherOf fhkb:charles_pickard_1854,
+        fhkb:george_pickard_1847,
+        fhkb:hannah_pickard_1844,
+        fhkb:harriet_ingelby_pickard_1858,
+        fhkb:ralph_pickard_1857,
+        fhkb:sarah_pickard_1839,
+        fhkb:susanna_pickard_1841 .
+
+fhkb:samuel_tubb_1832 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1832 ;
+    fhkb:hasBrother fhkb:thomas_andrew_tubb_1838 ;
+    fhkb:hasSister fhkb:caroline_lavinia_tubb_1840,
+        fhkb:emma_jane_tubb_1836 .
+
+fhkb:sarah_dickens_1801 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1801 ;
+    fhkb:hasDeathYear 1886 ;
+    fhkb:isMotherOf fhkb:amelia_jessop_1837,
+        fhkb:ann_jessop_1833,
+        fhkb:charles_jessop_1831,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:james_jessop_1836,
+        fhkb:john_jessop_1834,
+        fhkb:mary_jessop_1840 .
+
+fhkb:sarah_ingelby_1821 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1821 .
+
+fhkb:sarah_jacobs_1834 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1834 ;
+    fhkb:hasDeathYear 1936 ;
+    fhkb:isMotherOf fhkb:ada_rachel_heath_1868,
+        fhkb:gwendoline_heath_1878,
+        fhkb:lemuel_frederick_heath_1871,
+        fhkb:william_lock_jacobs_1861 .
+
+fhkb:sarah_jane_tubb_1812 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1812 ;
+    fhkb:hasBrother fhkb:edward_tubb_1827,
+        fhkb:henry_tubb_1825,
+        fhkb:james_tubb_1809,
+        fhkb:john_tubb_1816,
+        fhkb:samuel_tubb_1811,
+        fhkb:thomas_tubb_1820,
+        fhkb:william_tubb_1808 ;
+    fhkb:hasSister fhkb:mary_tubb_1814 .
+
+fhkb:sarah_lockey_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:hasBrother fhkb:george_baker_lockey_1812,
+        fhkb:henry_waterloo_lockey_1820,
+        fhkb:john_lockey_1824,
+        fhkb:joseph_lockey_1833,
+        fhkb:nicholas_lockey_1826,
+        fhkb:redman_lockey_1822,
+        fhkb:william_rivers_lockey_1815 ;
+    fhkb:hasSister fhkb:anne_lockey_1829,
+        fhkb:mary_lockey_1818 .
+
+fhkb:sarah_pickard_1839 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1839 ;
+    fhkb:hasBrother fhkb:charles_pickard_1854,
+        fhkb:george_pickard_1847,
+        fhkb:ralph_pickard_1857 ;
+    fhkb:hasSister fhkb:hannah_pickard_1844,
+        fhkb:harriet_ingelby_pickard_1858,
+        fhkb:susanna_pickard_1841 ;
+    fhkb:isMotherOf fhkb:eleanor_frances_green_1863,
+        fhkb:elizabeth_quincey_green_1886,
+        fhkb:frank_reginald_green_1883,
+        fhkb:henrietta_sarah_green_1873,
+        fhkb:lois_green_1871,
+        fhkb:mary_kate_green_1865,
+        fhkb:minnie_green_1871,
+        fhkb:william_henry_hutchinson_green_1875 .
+
+fhkb:sarah_steward_1849 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1849 .
+
+fhkb:susannah_cotton_1813 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1813 .
+
+fhkb:susannah_tacey_1834 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1834 ;
+    fhkb:hasBrother fhkb:john_william_tacey_1841,
+        fhkb:matthew_tacey_1837 ;
+    fhkb:hasDeathYear 1915 ;
+    fhkb:isMotherOf fhkb:ada_steward_1871,
+        fhkb:arthur_steward_1861,
+        fhkb:betsy_ann_steward_1865,
+        fhkb:catherine_steward_1863,
+        fhkb:fred_steward_1869,
+        fhkb:george_steward_1856,
+        fhkb:john_tacey_steward_1873,
+        fhkb:laura_steward_1859,
+        fhkb:mary_ellen_steward_1855,
+        fhkb:thomas_henry_steward_1874 .
+
+fhkb:thomas_henry_steward_1874 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1874 .
+
+fhkb:vincent_cotton_1808 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1808 ;
+    fhkb:hasDeathYear 1879 ;
+    fhkb:isFatherOf fhkb:charlotte_cotton_1840,
+        fhkb:edward_cotton_1850,
+        fhkb:elizabeth_cotton_1838,
+        fhkb:frances_cotton_1834,
+        fhkb:john_cotton_1842,
+        fhkb:martha_cotton_1832,
+        fhkb:mary_ann_cotton_1847,
+        fhkb:rebecca_cotton_1845,
+        fhkb:susanna_cotton_1836 .
+
+fhkb:walter_whitfield_1863 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1863 .
+
+fhkb:william_archer_1764 a owl:NamedIndividual ;
+    fhkb:isFatherOf fhkb:jane_archer,
+        fhkb:john_archer_1804,
+        fhkb:william_archer_1801 .
+
+fhkb:william_bright_1970 a owl:NamedIndividual ;
+    fhkb:isBrotherOf fhkb:janet_bright_1964 .
+
+fhkb:william_green_1813 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1813 ;
+    fhkb:hasBrother fhkb:john_green_1802 ;
+    fhkb:hasDeathYear 1833 ;
+    fhkb:hasSister fhkb:ann_green_1806,
+        fhkb:mary_green_1803,
+        fhkb:rebecca_green_1800,
+        fhkb:tamar_green_1810,
+        fhkb:zilpah_green_1810 ;
+    fhkb:isFatherOf fhkb:george_green_1834,
+        fhkb:hannah_green_1839,
+        fhkb:henry_green_1836,
+        fhkb:john_green_1843,
+        fhkb:mary_ann_green_1841,
+        fhkb:mary_ann_green_1846 .
+
+fhkb:william_pickard_1805 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1805 .
+
+fhkb:william_stanley_rever_1899 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1899 ;
+    fhkb:hasBrother fhkb:charles_herbert_rever_1895 ;
+    fhkb:hasSister fhkb:beatrice_rever_1901,
+        fhkb:mabel_rever_1897,
+        fhkb:rose_evlyn_rever_1906,
+        fhkb:vera_gertrude_rever_1904 ;
+    fhkb:knownAs "Stan" .
+
+fhkb:william_steward_1799 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1799 .
+
+fhkb:william_steward_1827 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1827 .
+
+fhkb:william_tacey_1818 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1818 .
+
+fhkb:william_tubb_1808 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1808 ;
+    fhkb:hasBrother fhkb:edward_tubb_1827,
+        fhkb:henry_tubb_1825,
+        fhkb:james_tubb_1809,
+        fhkb:john_tubb_1816,
+        fhkb:samuel_tubb_1811,
+        fhkb:thomas_tubb_1820 ;
+    fhkb:hasSister fhkb:mary_tubb_1814,
+        fhkb:sarah_jane_tubb_1812 .
+
+fhkb:william_whitfield_1852 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1852 .
+
+fhkb:william_young_1823 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1823 ;
+    fhkb:hasBrother fhkb:edward_young_1821,
+        fhkb:henry_young_1831,
+        fhkb:james_young_1836,
+        fhkb:samuel_young_1829 ;
+    fhkb:hasSister fhkb:harriet_ann_young_1825 .
+
+fhkb:zilpah_green_1810 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1810 ;
+    fhkb:hasDeathYear 1810 .
+
+fhkb:Sex a owl:Class ;
+    rdfs:subClassOf fhkb:DomainEntity ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:unionOf ( fhkb:Female fhkb:Male ) ],
+        [ a owl:Class ;
+            owl:unionOf ( fhkb:Female fhkb:Male ) ] .
+
+fhkb:ann_jessop_1833 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1833 ;
+    fhkb:hasBrother fhkb:james_jessop_1836,
+        fhkb:john_jessop_1834 ;
+    fhkb:hasSister fhkb:amelia_jessop_1837,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:mary_jessop_1840 .
+
+fhkb:caroline_bright_1822 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1822 .
+
+fhkb:charlotte_cotton_1840 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1840 .
+
+fhkb:david_bright_1934 a owl:NamedIndividual ;
+    fhkb:hasFather fhkb:william_george_bright_1901 ;
+    fhkb:hasMother fhkb:iris_ellen_archer_1906 ;
+    fhkb:isBrotherOf fhkb:john_bright_1930,
+        fhkb:peter_william_bright_1941 .
+
+fhkb:dorothy_archer_1845 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1845 ;
+    fhkb:isSisterOf fhkb:christopher_archer_1849,
+        fhkb:john_archer_1835 .
+
+fhkb:edward_tubb_1827 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1827 .
+
+fhkb:eileen_mary_rever_1929 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1929 ;
+    fhkb:isFemalePartnerIn fhkb:m118 .
+
+fhkb:eleanor_frances_green_1863 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1863 .
+
+fhkb:eliza_bright_1825 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1825 .
+
+fhkb:elizabeth_cotton_1838 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1838 .
+
+fhkb:elizabeth_quincey_green_1886 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1886 .
+
+fhkb:frances_cotton_1834 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1834 .
+
+fhkb:frances_elizabeth_ingelby_1816 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1816 ;
+    fhkb:hasBrother fhkb:george_ingelby_1814,
+        fhkb:james_ingelby_1811 ;
+    fhkb:hasDeathYear 1895 ;
+    fhkb:hasSister fhkb:sarah_ingelby_1821 ;
+    fhkb:isMotherOf fhkb:charles_pickard_1854,
+        fhkb:george_pickard_1847,
+        fhkb:hannah_pickard_1844,
+        fhkb:harriet_ingelby_pickard_1858,
+        fhkb:ralph_pickard_1857,
+        fhkb:sarah_pickard_1839,
+        fhkb:susanna_pickard_1841 .
+
+fhkb:frank_reginald_green_1883 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1883 .
+
+fhkb:gwendoline_heath_1878 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1878 ;
+    fhkb:hasDeathYear 1967 ;
+    fhkb:isSisterOf fhkb:lemuel_frederick_heath_1871 .
+
+fhkb:harriet_ann_young_1825 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1825 ;
+    fhkb:hasBrother fhkb:edward_young_1821,
+        fhkb:henry_young_1831,
+        fhkb:james_young_1836,
+        fhkb:john_young_1827,
+        fhkb:samuel_young_1829,
+        fhkb:william_young_1823 ;
+    fhkb:hasDeathYear 1854 ;
+    fhkb:isMotherOf fhkb:alice_whitfield_1859,
+        fhkb:annie_whitfield,
+        fhkb:george_whitfield_1865,
+        fhkb:harriet_ann_whitfield_1850,
+        fhkb:harriet_whitefield_1861,
+        fhkb:harry_whitfield_1854,
+        fhkb:james_whitfield_1848,
+        fhkb:louisa_whitfield_1857,
+        fhkb:walter_whitfield_1863,
+        fhkb:william_whitfield_1852 .
+
+fhkb:hasParent a owl:ObjectProperty ;
+    rdfs:domain fhkb:Person ;
+    rdfs:range fhkb:Person ;
+    rdfs:subPropertyOf fhkb:hasAncestor ;
+    owl:equivalentProperty fhkb:isChildOf ;
+    owl:inverseOf fhkb:isParentOf .
+
+fhkb:hasSex a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain fhkb:Person ;
+    rdfs:range fhkb:Sex .
+
+fhkb:henry_tubb_1825 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1825 .
+
+fhkb:henry_young_1831 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1831 .
+
+fhkb:isChildOf a owl:ObjectProperty .
+
+fhkb:james_alexander_archer_1882 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1882 ;
+    fhkb:isFatherOf fhkb:alec_john_archer_1927,
+        fhkb:ethel_archer_1912,
+        fhkb:iris_ellen_archer_1906,
+        fhkb:joyce_archer_1921,
+        fhkb:norman_james_archer_1909 .
+
+fhkb:james_alexander_bright_1921 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1921 ;
+    fhkb:hasDeathYear 1940 ;
+    fhkb:hasFather fhkb:james_frank_hayden_bright_1891 ;
+    fhkb:isBrotherOf fhkb:patricia_bright_1938 .
+
+fhkb:james_bright_1839 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1839 ;
+    fhkb:hasDeathYear 1865 ;
+    fhkb:isFatherOf fhkb:caroline_martha_bright_1864,
+        fhkb:henry_edmund_bright_1862,
+        fhkb:james_samuel_bright_1860 .
+
+fhkb:james_steward_1830 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1830 ;
+    fhkb:hasDeathYear 1900 ;
+    fhkb:isFatherOf fhkb:ada_steward_1871,
+        fhkb:arthur_steward_1861,
+        fhkb:betsy_ann_steward_1865,
+        fhkb:catherine_steward_1863,
+        fhkb:fred_steward_1869,
+        fhkb:george_steward_1856,
+        fhkb:john_tacey_steward_1873,
+        fhkb:laura_steward_1859,
+        fhkb:mary_ellen_steward_1855,
+        fhkb:thomas_henry_steward_1874 .
+
+fhkb:james_young_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 .
+
+fhkb:jane_bright_1820 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1820 .
+
+fhkb:john_cotton_1842 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1842 .
+
+fhkb:john_henry_harvey a owl:NamedIndividual .
+
+fhkb:john_jessop_1834 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1834 ;
+    fhkb:hasSister fhkb:amelia_jessop_1837,
+        fhkb:ann_jessop_1833,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:mary_jessop_1840 ;
+    fhkb:isBrotherOf fhkb:james_jessop_1836 .
+
+fhkb:john_steward_1802 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1802 ;
+    fhkb:hasDeathYear 1874 ;
+    fhkb:isFatherOf fhkb:alfred_steward_1846,
+        fhkb:caroline_steward_1853,
+        fhkb:elizabeth_steward_1850,
+        fhkb:ellen_steward_1844,
+        fhkb:george_steward_1835,
+        fhkb:harsley_steward_1839,
+        fhkb:houghton_steward_1841,
+        fhkb:james_steward_1830,
+        fhkb:john_steward_1833,
+        fhkb:joseph_steward_1837,
+        fhkb:sarah_steward_1849,
+        fhkb:william_steward_1827 .
+
+fhkb:john_tubb_1816 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1816 .
+
+fhkb:kathleen_minnie_bright_1904 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1904 .
+
+fhkb:lois_green_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 ;
+    fhkb:hasBrother fhkb:frank_reginald_green_1883,
+        fhkb:william_henry_hutchinson_green_1875 ;
+    fhkb:hasDeathYear 1941 ;
+    fhkb:hasSister fhkb:eleanor_frances_green_1863,
+        fhkb:elizabeth_quincey_green_1886,
+        fhkb:henrietta_sarah_green_1873,
+        fhkb:mary_kate_green_1865,
+        fhkb:minnie_green_1871 ;
+    fhkb:isMotherOf fhkb:minnie_maud_steward_1909,
+        fhkb:reginald_tacey_steward_1895,
+        fhkb:richard_henry_steward_1897,
+        fhkb:violet_sylvia_steward_1894 .
+
+fhkb:margaret_grace_rever_1934 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1934 ;
+    fhkb:hasSister fhkb:eileen_mary_rever_1929 .
+
+fhkb:martha_stafford_1814 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1814 ;
+    fhkb:hasDeathYear 1874 ;
+    fhkb:isMotherOf fhkb:caroline_bright_1845,
+        fhkb:edmund_charles_bright_1852,
+        fhkb:eliza_bright_1842,
+        fhkb:james_bright_1839,
+        fhkb:martha_ann_bright_1835,
+        fhkb:sarah_rebecca_bright_1849 .
+
+fhkb:mary_kate_green_1865 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1865 .
+
+fhkb:mary_tubb_1814 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1814 .
+
+fhkb:minnie_green_1871 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1871 .
+
+fhkb:nora_ada_bright_1899 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1899 .
+
+fhkb:reginald_tacey_steward_1895 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1895 .
+
+fhkb:samuel_young_1829 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1829 .
+
+fhkb:sarah_bright_1817 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1817 .
+
+fhkb:susanna_cotton_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 .
+
+fhkb:thomas_andrew_tubb_1838 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1838 .
+
+fhkb:thomas_tacey_1806 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1806 ;
+    fhkb:hasDeathYear 1885 ;
+    fhkb:isFatherOf fhkb:george_tacey_1831,
+        fhkb:john_william_tacey_1841,
+        fhkb:matthew_tacey_1837,
+        fhkb:susannah_tacey_1834 .
+
+fhkb:thomas_tubb_1820 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1820 .
+
+fhkb:vera_gertrude_rever_1904 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1904 ;
+    fhkb:hasBrother fhkb:charles_herbert_rever_1895 ;
+    fhkb:hasDeathYear 1922 .
+
+fhkb:violet_heath_1887 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1887 ;
+    fhkb:hasDeathYear 1965 ;
+    fhkb:isMotherOf fhkb:alec_john_archer_1927,
+        fhkb:ethel_archer_1912,
+        fhkb:iris_ellen_archer_1906,
+        fhkb:joyce_archer_1921,
+        fhkb:norman_james_archer_1909 .
+
+fhkb:violet_sylvia_steward_1894 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1894 ;
+    fhkb:hasBrother fhkb:reginald_tacey_steward_1895,
+        fhkb:richard_henry_steward_1897 ;
+    fhkb:hasDeathYear 1962 ;
+    fhkb:hasSister fhkb:minnie_maud_steward_1909 ;
+    fhkb:isMotherOf fhkb:eileen_mary_rever_1929,
+        fhkb:margaret_grace_rever_1934 .
+
+fhkb:william_bright_1827 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1827 .
+
+fhkb:william_henry_hutchinson_green_1875 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1875 .
+
+fhkb:william_rivers_lockey_1815 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1815 ;
+    fhkb:hasDeathYear 1854 ;
+    fhkb:isFatherOf fhkb:elizabeth_ann_lockey_1846,
+        fhkb:john_lockey_1840,
+        fhkb:ridman_lockey_1842,
+        fhkb:sarah_lockey_1848 .
+
+fhkb:amelia_jessop_1837 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1837 .
+
+fhkb:caroline_lavinia_tubb_1840 a owl:NamedIndividual ;
+    fhkb:alsoKnownAs "Maria" ;
+    fhkb:hasBirthYear 1840 ;
+    fhkb:hasBrother fhkb:samuel_tubb_1832,
+        fhkb:thomas_andrew_tubb_1838 ;
+    fhkb:hasDeathYear 1911 ;
+    fhkb:hasSister fhkb:emma_jane_tubb_1836 ;
+    fhkb:isMotherOf fhkb:caroline_martha_bright_1864,
+        fhkb:frank_terliven_1877,
+        fhkb:henry_edmund_bright_1862,
+        fhkb:james_samuel_bright_1860,
+        fhkb:katherine_emma_terliven_1871,
+        fhkb:maria_jane_terliven_1875,
+        fhkb:mary_elizabeth_terliven_1869,
+        fhkb:nellie_louise_terliven_1880,
+        fhkb:thomas_john_terliven_1867,
+        fhkb:william_robert_terliven_1873 .
+
+fhkb:ellen_jessop_1844 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1844 .
+
+fhkb:emma_jessop_1839 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1839 .
+
+fhkb:henry_edmund_bright_1862 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1862 ;
+    fhkb:hasDeathYear 1936 ;
+    fhkb:isFatherOf fhkb:charlotte_caroline_jane_bright_1894,
+        fhkb:frederick_herbert_bright_1889,
+        fhkb:henry_edmund_bright_1887,
+        fhkb:james_frank_hayden_bright_1891,
+        fhkb:kathleen_minnie_bright_1904,
+        fhkb:leonard_john_bright_1890,
+        fhkb:nora_ada_bright_1899,
+        fhkb:william_george_bright_1901 .
+
+fhkb:james_bright_1809 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1809 ;
+    fhkb:hasDeathYear 1894 ;
+    fhkb:isFatherOf fhkb:caroline_bright_1845,
+        fhkb:edmund_charles_bright_1852,
+        fhkb:eliza_bright_1842,
+        fhkb:james_bright_1839,
+        fhkb:martha_ann_bright_1835,
+        fhkb:sarah_rebecca_bright_1849 .
+
+fhkb:james_bright_1964 a owl:NamedIndividual ;
+    fhkb:isBrotherOf fhkb:clare_bright_1966,
+        fhkb:julie_bright_1966 .
+
+fhkb:janet_bright_1964 a owl:NamedIndividual .
+
+fhkb:john_archer_1835 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1835 ;
+    fhkb:isBrotherOf fhkb:jane_archer_1837 ;
+    fhkb:isFatherOf fhkb:ellen_archer_1875,
+        fhkb:james_alexander_archer_1882,
+        fhkb:james_archer_1887,
+        fhkb:john_english_archer,
+        fhkb:lily_archer_1880,
+        fhkb:mary_archer_1885,
+        fhkb:thomas_archer_1868 .
+
+fhkb:mabel_rever_1897 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1897 ;
+    fhkb:hasBrother fhkb:charles_herbert_rever_1895,
+        fhkb:william_stanley_rever_1899 ;
+    fhkb:hasSister fhkb:beatrice_rever_1901,
+        fhkb:rose_evlyn_rever_1906,
+        fhkb:vera_gertrude_rever_1904 .
+
+fhkb:martha_cotton_1832 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1832 ;
+    fhkb:hasDeathYear 1916 ;
+    fhkb:isMotherOf fhkb:charlotte_ann_jessop_1865,
+        fhkb:edward_jessop_1867,
+        fhkb:elizabeth_frances_jessop_1869,
+        fhkb:herbert_vincent_jessop_1871,
+        fhkb:mary_eliza_jessop_1863 .
+
+fhkb:mary_jessop_1840 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1840 .
+
+fhkb:rose_evlyn_rever_1906 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1906 ;
+    fhkb:hasBrother fhkb:charles_herbert_rever_1895 ;
+    fhkb:knownAs "Rosie" .
+
+fhkb:samuel_tubb_1811 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1811 ;
+    fhkb:hasDeathYear 1869 ;
+    fhkb:isFatherOf fhkb:caroline_lavinia_tubb_1840,
+        fhkb:emma_jane_tubb_1836,
+        fhkb:samuel_tubb_1832,
+        fhkb:thomas_andrew_tubb_1838 .
+
+fhkb:sarah_lockey_1848 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1848 ;
+    fhkb:isMotherOf fhkb:ellen_archer_1875,
+        fhkb:james_alexander_archer_1882,
+        fhkb:james_archer_1887,
+        fhkb:lily_archer_1880,
+        fhkb:mary_archer_1885 .
+
+fhkb:alec_john_archer_1927 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1927 ;
+    fhkb:isBrotherOf fhkb:iris_ellen_archer_1906 .
+
+fhkb:james_jessop_1836 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1836 ;
+    fhkb:hasDeathYear 1922 ;
+    fhkb:hasSister fhkb:amelia_jessop_1837,
+        fhkb:ann_jessop_1833,
+        fhkb:ellen_jessop_1844,
+        fhkb:emma_jessop_1839,
+        fhkb:mary_jessop_1840 ;
+    fhkb:isBrotherOf fhkb:john_jessop_1834 ;
+    fhkb:isFatherOf fhkb:charlotte_ann_jessop_1865,
+        fhkb:edward_jessop_1867,
+        fhkb:elizabeth_frances_jessop_1869,
+        fhkb:herbert_vincent_jessop_1871,
+        fhkb:mary_eliza_jessop_1863 .
+
+fhkb:joyce_archer_1921 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1921 .
+
+fhkb:norman_james_archer_1909 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1909 ;
+    fhkb:isBrotherOf fhkb:ethel_archer_1912,
+        fhkb:iris_ellen_archer_1906 .
+
+fhkb:Man a owl:Class ;
+    owl:disjointWith fhkb:Marriage,
+        fhkb:Woman ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:hasSex ;
+                        owl:someValuesFrom fhkb:Male ] ) ],
+        [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:hasSex ;
+                        owl:someValuesFrom fhkb:Male ] ) ] .
+
+fhkb:charles_herbert_rever_1895 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1895 ;
+    fhkb:hasDeathYear 1961 ;
+    fhkb:hasSister fhkb:mabel_rever_1897 ;
+    fhkb:isFatherOf fhkb:eileen_mary_rever_1929,
+        fhkb:margaret_grace_rever_1934 ;
+    fhkb:knownAs "Ben",
+        "Benny" .
+
+fhkb:ethel_archer_1912 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1912 .
+
+fhkb:iris_ellen_archer_1906 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1906 ;
+    fhkb:hasBrother fhkb:alec_john_archer_1927,
+        fhkb:norman_james_archer_1909 ;
+    fhkb:hasDeathYear 1990 ;
+    fhkb:hasSister fhkb:ethel_archer_1912,
+        fhkb:joyce_archer_1921 .
+
+fhkb:charlotte_caroline_jane_bright_1894 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1894 .
+
+fhkb:isParentOf a owl:ObjectProperty ;
+    owl:propertyDisjointWith fhkb:isSpouseOf .
+
+fhkb:william_george_bright_1901 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1901 ;
+    fhkb:hasDeathYear 1982 ;
+    fhkb:knownAs "Bill" .
+
+fhkb:mary_eliza_jessop_1863 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1863 ;
+    fhkb:isSisterOf fhkb:charlotte_ann_jessop_1865 .
+
+fhkb:Woman a owl:Class ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:hasSex ;
+                        owl:someValuesFrom fhkb:Female ] ) ],
+        [ a owl:Class ;
+            owl:intersectionOf ( fhkb:Person [ a owl:Restriction ;
+                        owl:onProperty fhkb:hasSex ;
+                        owl:someValuesFrom fhkb:Female ] ) ] .
+
+fhkb:james_frank_hayden_bright_1891 a owl:NamedIndividual ;
+    fhkb:hasBirthYear 1891 .
+
+fhkb:Person a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:onProperty fhkb:hasMother ;
+            owl:someValuesFrom fhkb:Woman ],
+        [ a owl:Restriction ;
+            owl:onProperty fhkb:hasMother ;
+            owl:someValuesFrom fhkb:Woman ],
+        [ a owl:Restriction ;
+            owl:onProperty fhkb:hasSex ;
+            owl:someValuesFrom fhkb:Sex ],
+        [ a owl:Restriction ;
+            owl:maxQualifiedCardinality "2"^^xsd:nonNegativeInteger ;
+            owl:onClass fhkb:Person ;
+            owl:onProperty fhkb:hasParent ],
+        [ a owl:Restriction ;
+            owl:onProperty fhkb:hasSex ;
+            owl:someValuesFrom fhkb:Sex ],
+        [ a owl:Restriction ;
+            owl:onProperty fhkb:hasFather ;
+            owl:someValuesFrom fhkb:Man ],
+        [ a owl:Restriction ;
+            owl:onProperty fhkb:hasFather ;
+            owl:someValuesFrom fhkb:Man ],
+        [ a owl:Restriction ;
+            owl:maxQualifiedCardinality "2"^^xsd:nonNegativeInteger ;
+            owl:onClass fhkb:Person ;
+            owl:onProperty fhkb:hasParent ],
+        fhkb:DomainEntity ;
+    owl:disjointWith fhkb:Sex ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:unionOf ( fhkb:Man fhkb:Woman ) ],
+        [ a owl:Class ;
+            owl:unionOf ( fhkb:Man fhkb:Woman ) ] .
+
+[] a owl:AllDifferent ;
+    owl:distinctMembers ( fhkb:ada_rachel_heath_1868 fhkb:ada_steward_1871 fhkb:alan_john_dowse_1936 fhkb:alec_john_archer_1927 fhkb:alexander_ilych_brown_1988 fhkb:alfred_hostler fhkb:alfred_steward_1846 fhkb:alice_harvey_1895 fhkb:alice_whitfield_1859 fhkb:amanda_usher_1968 fhkb:amelia_jessop_1837 fhkb:andrew_usher_1965 fhkb:ann_green_1806 fhkb:ann_hollinsworth_1808 fhkb:ann_jacobs_1832 fhkb:ann_james fhkb:ann_jessop_1833 fhkb:ann_lodge_1763 fhkb:ann_norton_1799 fhkb:ann_pickard_1809 fhkb:anne_archer_1964 fhkb:anne_lockey_1829 fhkb:annie_whitfield fhkb:arthur_steward_1861 fhkb:arthur_tuton fhkb:avril_bright_1990 fhkb:beatrice_rever_1901 fhkb:benjamin_anthony_heath_2005 fhkb:benjamin_pierrepoint_1994 fhkb:bethia_burton_1821 fhkb:betsy_ann_steward_1865 fhkb:brenda_cleife_1947 fhkb:caroline_bright_1822 fhkb:caroline_bright_1845 fhkb:caroline_cox fhkb:caroline_lavinia_tubb_1840 fhkb:caroline_martha_bright_1864 fhkb:caroline_steward_1853 fhkb:catherine_steward_1863 fhkb:catherine_thompson fhkb:celia_pinchbeck_1949 fhkb:charles_herbert_rever_1895 fhkb:charles_jacobs_1842 fhkb:charles_jessop_1831 fhkb:charles_pickard_1854 fhkb:charlotte_ann_jessop_1865 fhkb:charlotte_bright_1928 fhkb:charlotte_caroline_jane_bright_1894 fhkb:charlotte_cotton_1840 fhkb:charlotte_hewett_1863 fhkb:christian_bright_1985 fhkb:christopher_archer_1849 fhkb:clare_archer_1957 fhkb:clare_bright_1966 fhkb:clarence_john_heath_1896 fhkb:crispin_hutchinson fhkb:daisy_harriet_heath_1889 fhkb:daniel_grigg_hewett_1813 fhkb:david_bright_1934 fhkb:david_brown fhkb:dereck_heath_1929 fhkb:diana_pool fhkb:dorothy_archer_1845 fhkb:eden_georgina_gardner_thompson_1810 fhkb:edmund_bright_1813 fhkb:edmund_charles_bright_1852 fhkb:edna_hostler fhkb:edward_blanchard_1771 fhkb:edward_cotton_1850 fhkb:edward_jessop_1802 fhkb:edward_jessop_1867 fhkb:edward_tubb_1827 fhkb:edward_young_1795 fhkb:edward_young_1821 fhkb:eileen_mary_rever_1929 fhkb:eleanor_frances_green_1863 fhkb:eleanor_harsley_1808 fhkb:eleanor_pringle_1741 fhkb:elisa_amelia_hewett_1858 fhkb:eliza_bright_1825 fhkb:eliza_bright_1842 fhkb:elizabeth_ann_lockey_1846 fhkb:elizabeth_archer_1843 fhkb:elizabeth_blanchard_1807 fhkb:elizabeth_clamper_1760 fhkb:elizabeth_cotton_1838 fhkb:elizabeth_frances_jessop_1869 fhkb:elizabeth_gray_1810 fhkb:elizabeth_harsley_1803 fhkb:elizabeth_pickard_1805 fhkb:elizabeth_quincey_green_1886 fhkb:elizabeth_rivers_1787 fhkb:elizabeth_steward_1850 fhkb:ellen_archer_1875 fhkb:ellen_harsley fhkb:ellen_jessop_1844 fhkb:ellen_steward_1797 fhkb:ellen_steward_1844 fhkb:elma_ellen_story_1893 fhkb:elma_harvey_1903 fhkb:emily_jennifer_pierrepoint_1996 fhkb:emma_hewett_1860 fhkb:emma_jane_tubb_1836 fhkb:emma_jessop_1839 fhkb:emma_templar_1991 fhkb:eric_cleife_1951 fhkb:ethel_archer_1912 fhkb:ethel_harvey_1888 fhkb:fanny_jacobs_1840 fhkb:finlay_alex_clamper_2002 fhkb:florelle_nenuphar_heath_1880 fhkb:frances_cotton_1834 fhkb:frances_elizabeth_ingelby_1816 fhkb:frances_spikin_1779 fhkb:frank_hewett_bright_1920 fhkb:frank_jacobs_1846 fhkb:frank_reginald_green_1883 fhkb:frank_terliven_1877 fhkb:fred_steward_1869 fhkb:frederick_herbert_bright_1889 fhkb:george_archer_1760 fhkb:george_baker_lockey_1812 fhkb:george_green_1834 fhkb:george_ingelby_1814 fhkb:george_jacobs_1852 fhkb:george_pickard_1847 fhkb:george_stafford_1807 fhkb:george_steward_1835 fhkb:george_steward_1856 fhkb:george_tacey_1831 fhkb:george_whitfield_1865 fhkb:gwendoline_heath_1878 fhkb:hannah_green_1839 fhkb:hannah_hutchinson_1804 fhkb:hannah_pickard_1844 fhkb:hannah_steward_1801 fhkb:harriet_ann_whitfield_1850 fhkb:harriet_ann_young_1825 fhkb:harriet_bright_1811 fhkb:harriet_ingelby_pickard_1858 fhkb:harriet_whitefield_1861 fhkb:harry_bright_hostler fhkb:harry_james_nelson_2001 fhkb:harry_whitfield_1854 fhkb:harsley_steward_1839 fhkb:helen_archer_1955 fhkb:henrietta_sarah_green_1873 fhkb:henry_edmond_peter_bright_1926 fhkb:henry_edmund_bright_1862 fhkb:henry_edmund_bright_1887 fhkb:henry_green_1836 fhkb:henry_jacobs_1849 fhkb:henry_tubb_1825 fhkb:henry_waterloo_lockey_1820 fhkb:henry_young_1831 fhkb:herbert_vincent_jessop_1871 fhkb:hilda_harvey_1890 fhkb:holly_bright_1983 fhkb:houghton_steward_1841 fhkb:humphrey_archer_1726 fhkb:ian_alexander_archer_1944 fhkb:ian_bright_1959 fhkb:iris_ellen_archer_1906 fhkb:iris_maud_gertrude_heath_1901 fhkb:ivy_grace_heath_1894 fhkb:jack_william_usher_1999 fhkb:james_alexander_archer_1882 fhkb:james_alexander_bright_1921 fhkb:james_archer_1757 fhkb:james_archer_1840 fhkb:james_archer_1887 fhkb:james_bright_1761 fhkb:james_bright_1787 fhkb:james_bright_1809 fhkb:james_bright_1839 fhkb:james_bright_1964 fhkb:james_dickens_1774 fhkb:james_frank_hayden_bright_1891 fhkb:james_hewett_1815 fhkb:james_hewett_1850 fhkb:james_hollinsworth_1804 fhkb:james_ingelby_1811 fhkb:james_jacobs_1806 fhkb:james_jessop_1836 fhkb:james_keith_archer_1946 fhkb:james_samuel_bright_1860 fhkb:james_stafford_1779 fhkb:james_stafford_1803 fhkb:james_steward_1798 fhkb:james_steward_1830 fhkb:james_tubb_1809 fhkb:james_whitfield_1792 fhkb:james_whitfield_1821 fhkb:james_whitfield_1848 fhkb:james_young_1836 fhkb:jane_archer fhkb:jane_archer_1837 fhkb:jane_blake_1784 fhkb:jane_bright_1820 fhkb:jane_burton_1823 fhkb:jane_hewett_1849 fhkb:jane_jacobs_1836 fhkb:jane_taylor fhkb:janet_bright_1964 fhkb:jean_margaret_archer_1934 fhkb:jeremiah_jacobs fhkb:john_archer_1804 fhkb:john_archer_1835 fhkb:john_bright_1930 fhkb:john_cotton_1778 fhkb:john_cotton_1842 fhkb:john_english_archer fhkb:john_green_1802 fhkb:john_green_1843 fhkb:john_harsley_1791 fhkb:john_heath fhkb:john_henry_harvey fhkb:john_hewson_stafford_1811 fhkb:john_hollinsworth_1768 fhkb:john_james_hewett_1845 fhkb:john_jessop_1773 fhkb:john_jessop_1834 fhkb:john_jessop_harvey_1892 fhkb:john_lockey_1789 fhkb:john_lockey_1824 fhkb:john_lockey_1840 fhkb:john_steward_1802 fhkb:john_steward_1833 fhkb:john_tacey_steward_1873 fhkb:john_tubb_1816 fhkb:john_william_folland fhkb:john_william_tacey_1841 fhkb:john_young_1827 fhkb:joseph_lockey_1833 fhkb:joseph_steward_1837 fhkb:joshua_charles_heath_2003 fhkb:joyce_archer_1921 fhkb:joyce_scutchings fhkb:julie_bright_1966 fhkb:june_dowse_1941 fhkb:katherine_emma_terliven_1871 fhkb:kathleen_constance_susan_bright_1924 fhkb:kathleen_minnie_bright_1904 fhkb:laura_steward_1859 fhkb:laura_templar_1994 fhkb:lemuel_frederic_heath_1891 fhkb:lemuel_frederick_heath_1871 fhkb:leonard_john_bright_1890 fhkb:lily_archer_1880 fhkb:lois_green_1871 fhkb:louisa_whitfield_1817 fhkb:louisa_whitfield_1857 fhkb:louise_clamper_1998 fhkb:louise_templar_1993 fhkb:lucy_jacobs_1844 fhkb:luke_bateman_story fhkb:lynn_michaela_heath_2008 fhkb:m100 fhkb:m102 fhkb:m103 fhkb:m104 fhkb:m105 fhkb:m106 fhkb:m107 fhkb:m108 fhkb:m113 fhkb:m114 fhkb:m115 fhkb:m117 fhkb:m118 fhkb:m119 fhkb:m122 fhkb:m124 fhkb:m126 fhkb:m127 fhkb:m128 fhkb:m129 fhkb:m131 fhkb:m132 fhkb:m133 fhkb:m134 fhkb:m135 fhkb:m136 fhkb:m137 fhkb:m138 fhkb:m139 fhkb:m140 fhkb:m141 fhkb:m142 fhkb:m143 fhkb:m144 fhkb:m145 fhkb:m146 fhkb:m147 fhkb:m148 fhkb:m149 fhkb:m150 fhkb:m151 fhkb:m152 fhkb:m153 fhkb:m154 fhkb:m155 fhkb:m156 fhkb:m157 fhkb:m158 fhkb:m159 fhkb:m160 fhkb:m161 fhkb:m162 fhkb:m164 fhkb:m165 fhkb:m166 fhkb:m167 fhkb:m168 fhkb:m169 fhkb:m170 fhkb:m171 fhkb:m172 fhkb:m173 fhkb:m174 fhkb:m175 fhkb:m176 fhkb:m177 fhkb:m178 fhkb:m179 fhkb:m180 fhkb:m181 fhkb:m182 fhkb:mabel_rever_1897 fhkb:margaret_grace_rever_1934 fhkb:maria_jane_terliven_1875 fhkb:marion_jean_bright_1922 fhkb:mark_anthony_heath_1960 fhkb:mark_bright_1956 fhkb:mark_steward_1811 fhkb:martha_ann_bright_1835 fhkb:martha_cotton_1806 fhkb:martha_cotton_1832 fhkb:martha_stafford_1814 fhkb:martha_taylor_burton_1816 fhkb:martha_wife_of_john_cotton fhkb:martin_dowse_1944 fhkb:mary_ann_bright_1815 fhkb:mary_ann_cotton_1847 fhkb:mary_ann_green_1841 fhkb:mary_ann_green_1846 fhkb:mary_ann_hewett_1852 fhkb:mary_ann_stafford_1810 fhkb:mary_ann_whitfield_1824 fhkb:mary_archer_1850 fhkb:mary_archer_1885 fhkb:mary_bainton_1780 fhkb:mary_dickens_1802 fhkb:mary_eliza_jessop_1863 fhkb:mary_elizabeth_terliven_1869 fhkb:mary_ellen_steward_1855 fhkb:mary_english_1862 fhkb:mary_frankish fhkb:mary_glover fhkb:mary_green_1803 fhkb:mary_gulliver fhkb:mary_harsley_1810 fhkb:mary_hollingsworth_1801 fhkb:mary_houghton fhkb:mary_jessop_1840 fhkb:mary_kate_green_1865 fhkb:mary_lockey_1818 fhkb:mary_paddison fhkb:mary_tacey_1808 fhkb:mary_tacey_1809 fhkb:mary_tacey_1811 fhkb:mary_tubb_1814 fhkb:mary_wife_of_john_jessop fhkb:mary_wife_of_thomas_tisy fhkb:mary_wife_of_william_hewett fhkb:matthew_tacey_1837 fhkb:maureen_dowse_1939 fhkb:mega_clamper_1995 fhkb:minnie_green_1871 fhkb:minnie_maud_steward_1909 fhkb:nellie_louise_terliven_1880 fhkb:nicholas_charles_heath_1964 fhkb:nicholas_lockey_1826 fhkb:nora_ada_bright_1899 fhkb:norman_james_archer_1909 fhkb:patricia_ann_kingswood_1944 fhkb:patricia_bright_1938 fhkb:paul_archer_1950 fhkb:peter_templar_1962 fhkb:peter_william_bright_1941 fhkb:priscilla_saunders_1810 fhkb:ralph_pickard_1775 fhkb:ralph_pickard_1857 fhkb:randall_harsley_1801 fhkb:rebecca_bright_1999 fhkb:rebecca_cotton_1818 fhkb:rebecca_cotton_1845 fhkb:rebecca_green_1800 fhkb:rebecca_harsley_1793 fhkb:rebecca_stafford_1816 fhkb:rebecca_wife_of_james_stafford fhkb:redman_lockey_1822 fhkb:reece_bright_1993 fhkb:reginald_tacey_steward_1895 fhkb:rhiannon_brown_1969 fhkb:rhys_anthony_heath_2006 fhkb:richard_henry_steward_1897 fhkb:richard_john_bright_1962 fhkb:richard_pickard_1807 fhkb:ridman_lockey_1842 fhkb:robert_david_bright_1965 fhkb:robert_harsley_1762 fhkb:robert_harvey fhkb:robert_harvey_1906 fhkb:robert_hewett_1807 fhkb:robert_jerome_hostler fhkb:robert_whitfield_1813 fhkb:rose_evlyn_rever_1906 fhkb:rosena_martha_hewett_1847 fhkb:roy_cleife_1944 fhkb:ruth_hostler fhkb:samuel_tubb_1811 fhkb:samuel_tubb_1832 fhkb:samuel_young_1829 fhkb:sarah_bright_1817 fhkb:sarah_chard_1787 fhkb:sarah_dickens_1801 fhkb:sarah_hewett_1815 fhkb:sarah_ingelby_1821 fhkb:sarah_jacobs_1834 fhkb:sarah_jane_tubb_1812 fhkb:sarah_jane_whitfield_1818 fhkb:sarah_jane_whitfield_1829 fhkb:sarah_jewell_1790 fhkb:sarah_lockey_1810 fhkb:sarah_lockey_1848 fhkb:sarah_pickard_1839 fhkb:sarah_rebecca_bright_1849 fhkb:sarah_rever_1850 fhkb:sarah_steward_1849 fhkb:sarah_stocks_1768 fhkb:sarah_webb fhkb:sheila_cleife_1949 fhkb:stephen_templar_1960 fhkb:susanna_cotton_1836 fhkb:susanna_pickard_1803 fhkb:susanna_pickard_1841 fhkb:susanna_walkerly_1777 fhkb:susanna_wife_of_william_cotton fhkb:susannah_cotton_1813 fhkb:susannah_tacey_1834 fhkb:sydney_victor_heath_1899 fhkb:tamar_green_1810 fhkb:thomas_andrew_tubb_1838 fhkb:thomas_archer_1849 fhkb:thomas_archer_1868 fhkb:thomas_burton_1765 fhkb:thomas_burton_1826 fhkb:thomas_hayden_terliven_1838 fhkb:thomas_henry_steward_1874 fhkb:thomas_john_bright_1988 fhkb:thomas_john_terliven_1867 fhkb:thomas_tacey_1806 fhkb:thomas_taisy fhkb:thomas_tubb_1820 fhkb:thomas_william_whitfield_1826 fhkb:tom_pinchbeck fhkb:vera_elm_1931 fhkb:vera_gertrude_rever_1904 fhkb:vera_tuton_1920 fhkb:vincent_cotton_1808 fhkb:violet_heath_1887 fhkb:violet_sylvia_steward_1894 fhkb:walter_whitfield_1863 fhkb:william_alfred_heath_1885 fhkb:william_archer_1764 fhkb:william_archer_1801 fhkb:william_archer_1832 fhkb:william_bright_1827 fhkb:william_bright_1970 fhkb:william_bright_2001 fhkb:william_cotton fhkb:william_george_bright_1901 fhkb:william_green fhkb:william_green_1813 fhkb:william_henry_hutchinson_green_1875 fhkb:william_hewett fhkb:william_hutchinson fhkb:william_ingelby_1789 fhkb:william_john_cotton_1804 fhkb:william_lock fhkb:william_lock_jacobs_1861 fhkb:william_pickard_1805 fhkb:william_rever_1870 fhkb:william_rivers_lockey_1815 fhkb:william_robert_terliven_1873 fhkb:william_stanley_rever_1899 fhkb:william_steward_1766 fhkb:william_steward_1799 fhkb:william_steward_1827 fhkb:william_tacey_1783 fhkb:william_tacey_1818 fhkb:william_tubb_1786 fhkb:william_tubb_1808 fhkb:william_whitfield_1852 fhkb:william_young_1823 fhkb:yvonne_archer_1940 fhkb:zilpah_green_1810 ) .
+

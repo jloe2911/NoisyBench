@@ -1,26 +1,120 @@
 # NSORN: Designing a Benchmark Dataset for Neurosymbolic Ontology Reasoning with Noise
 
-## Description
+**Benchmarking framework for evaluating neurosymbolic ontology reasoners under noisy conditions.**
 
-In the field of neurosymbolic computing, there is a lack of standardized benchmark datasets specifically designed for evaluating neurosymbolic reasoning systems. Currently, no benchmarks or evaluation frameworks have been explicitly developed to assess the robustness of these systems to noise. Therefore, this work aims to develop a mechanism for introducing noise into ontologies, particularly focusing on the ABox, and evaluates the performance of existing neurosymbolic reasoners under varying noise levels. We developed three techniques to introduce noise into ontologies: logical, statistical, and random noise. Logical noise uses logical violations of disjoint axioms and domain/range constraints. While random noise corrupts existing triples by replacing either subject or object of a triple with random entity, statistical noise is introduced using Graph Neural Networks  to add noisy facts with low-probability scores. We evaluated the performance of existing neurosymbolic reasoners by introducing noise to OWL2Bench and Family ontologies under various noise types and levels. The resulting benchmarks were tested on two state-of-the-art neurosymbolic reasoners, Box2EL and OWL2Vec*. We focused on specific reasoning tasks such as membership and object property assertions to test how these reasoners handle noise. Our main finding is that logical noise creates a more challenging learning case, resulting in a significant decrease in the performance of both Box2EL and OWL2Vec*.
+**NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2Bench** and **Family**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL** and **OWL2Vec***). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
 
-## Install dependencies
+---
+
+## Features
+
+- 🧩 **Noise Injection Framework** – Add logical, random, and statistical noise to ontologies.  
+- 📊 **Benchmark Creation** – Generate noisy versions of widely used ontologies.  
+- ⚡ **Reasoner Evaluation** – Assess neurosymbolic reasoners under different noise conditions.  
+- 🔍 **Reasoning Tasks Support** – Evaluate tasks like class membership and object property assertions.  
+- 📉 **Performance Insights** – Study how different types of noise impact reasoning robustness.
+
+---
+
+## Requirements
+
+- Python 3.12.7  
+- pip (Python package manager)
+
+---
+
+## Installation
+
+**Clone the repository:**
+
+```bash
+git clone https://github.com/jloe2911/NoisyBench
+cd noisybench
+```
+
+**(Option 1): Install dependencies within virtual environment**
+
+```bash
+# Create a virtual environment named 'env'
+
+python3 -m venv env
+
+# Activate the environment
+
+# On macOS/Linux
+
+source env/bin/activate
+
+# On Windows
+
+env\Scripts\activate
+
+# Install dependencies inside the environment
+
+pip install -r requirements.txt
+```
+
+**(Option 2): Install dependencies:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Quick Tour
+---
 
-1. `GenerateGraphs.ipynb`: 
-For each resource $r$, we construct a small graph $g$ that includes all triples where either the subject or object is $r$. We divide the original ontology into these smaller graphs $g$ to improve Pellet's scalability. To ensure effective inference, each graph $g$ is extended to two hops, denoted $g'$, capturing all statements within two hops of $r$, and the TBox is added to each graph $g$.
-2. `Owlready2-example`: 
-We then apply Pellet to the extended graphs $g'_1$, $g'_2$, ..., $g'_R$, where $R$ represents the set of resources in the original ontology, resulting in the inference graphs $i_1$, $i_2$, ..., $i_R$. 
-3. `FilterInferences.py`: 
-To extract only meaningful triples, we focus on membership and property assertion triples, removing any triples where the object is a Literal or owl:Thing, yielding refined graphs $i*_1$, $i*_2$, ..., $i*_R$. 
-4. `PrepareGraphs.ipynb`: 
-Since our approach is unsupervised, the graphs $g$ are ultimately added to $G_{train}$, while graphs $i*$ are assigned to $G_{test}$. The subgraphs can be found [here] (https://drive.google.com/drive/folders/1KnDF0MUJX4O427z4Oue1njox8A76K2ac?usp=sharing).
-5. `NoiseGeneratation.ipynb`: 
-Generates ABox noise in an ontology: logical, statistical and random contradictions. For each noise generation method, we introduced a parameter $k$, where $k$ indicates the percentage of noise to be added in relation to the total number of triples of the original ontology. We use OWL2DL-1 and Family that can be found [here](https://drive.google.com/drive/folders/1GqatK1voRCQayrkz7gmQi46yEQuIZIWf?usp=drive_link) and should be added to `datasets/{dataset_name}.owl`. The notebook outputs noisy datasets stored in `datasets/noise/{dataset_name}_{noise_generation_method}_{noise_percentage}.owl`. The noisy datasets can also be found [here](https://drive.google.com/drive/folders/14TzofCSdxgvXEA5aJ7fhppK8EuN5k2aH?usp=drive_link).
-6. `OWL2Vec.ipynb`: OWL2Vec*.
-7. `EL.ipynb`: Box2EL.
+## Usage
+
+### Create Noisy Ontologies
+
+```bash
+python pipeline_noise.py --dataset_name family
+python pipeline_noise.py --dataset_name OWL2DL-1
+```
+
+The pipeline uses ontologies stored in the `ontology` folder:
+
+- `family.owl`
+- `OWL2Bench.owl`
+
+For each ontology, two additional versions are provided:
+
+- `*_TBOX.owl`: contains only the TBox.
+- `*_modified.owl`: enriched with additional disjoint classes and properties.
+
+**Pipeline Steps:**
+
+1. **Graph Construction per Resource**  
+   - For each resource `r`, construct a small graph `g` containing all triples where `r` appears as subject or object.
+   - Each graph `g`g is expanded to two hops (`g'`) to include all statements within two hops of `r`.
+   - The TBox is added to each graph.
+
+   **Outputs:**  
+   - **Input graphs:** 2-hop + TBox  
+   - **Filtered 1-hop graphs:** 1-hop without TBox  
+   - **Filtered input graphs:** 2-hop without TBox  
+
+2. **Run the Reasoner**  
+   - Apply Pellet to the **input graphs** to produce **inferred_graphs**.
+
+3. **Filter Inferences**
+   - To extract only meaningful triples, we focus on membership and property assertion triples, removing any triples where the object is a `Literal` or `owl:Thing`, yielding refined graphs **inferred_graphs_filtered**.
+
+4. **Build Train, Test and Validation Graphs**
+   - Since our approach is unsupervised, the ontology is added to `G_{train}`, while graphs from **inferred_graphs_filtered** are assigned to `G_{test}` and `$G_{val}`.
+
+5. **Create Noise**
+   - Generates ABox noise in an ontology: random, statistical and logical contradictions.
+
+   **Outputs:**  
+| Noise Level | Description |
+|------------|-------------|
+| 0.25       | 25% of the original triples are modified/added as noise |
+| 0.5        | 50% of the original triples are modified/added as noise |
+| 0.75       | 75% of the original triples are modified/added as noise |
+| 1.0        | 100% of the original triples are modified/added as noise |
+
+### To Run NeuroSymbolic Reasoners
+
+```bash
+python pipeline_reasoner.py --dataset_name family --reasoner owl2vec
+```
