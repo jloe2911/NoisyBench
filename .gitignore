@@ -178,3 +178,6 @@ pyrightconfig.json
 datasets
 models
 Pellet/temp
+notes.txt
+test_owl2vec.ipynb
+test.ipynb

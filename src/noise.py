@@ -115,6 +115,8 @@ def train_gnn(g, nodes, device, relations, epochs=100):
     data = get_data(g)[0]
     data = split_edges(data)
     model = GNN(device, len(nodes), len(relations))    
+    for _ in range(epochs+1):
+        loss = model._train(data.to(device))
     return model, data
 
 def add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage):

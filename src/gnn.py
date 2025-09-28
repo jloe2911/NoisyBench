@@ -1,16 +1,25 @@
-import numpy as np
+import os 
 import operator
 import random
 import math
 from collections import defaultdict
+import rdflib
+from rdflib import RDF, RDFS
 
 import torch
 import torch.nn.functional as F
 from torch.nn import Parameter
 
+import torch_geometric
 from torch_geometric.nn import GAE, RGCNConv
 from torch_geometric.utils import negative_sampling
 from torch_geometric.data import HeteroData
+
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+from src.utils import get_data, get_namespace, save_results
 
 class RGCNEncoder(torch.nn.Module):
     def __init__(self, num_nodes, hidden_channels, num_relations):
@@ -79,37 +88,23 @@ class GNN():
 
         return float(loss)
 
-    def _eval(self, data):
+    def _eval(self, data, target_type, multiple):
         with torch.no_grad():
             self.model.eval()
 
-            output = self.model.encode(data.test_pos_edge_index, data.test_edge_type)
+            new_data = get_specific_test_edge_type(data, target_type, multiple)
 
-            mrr, mean_rank, median_rank, hits5, hits10 = eval_hits(edge_index=data.test_pos_edge_index,
-                                                                   tail_pred=1,
-                                                                   output=output,
-                                                                   max_num=100,
-                                                                   device=self.device)
+            output = self.model.encode(new_data.test_pos_edge_index, new_data.test_edge_type)
+
+            mrr, hits_at_1, hits_at_5, hits_at_10 = eval_hits(edge_index=new_data.test_pos_edge_index,
+                                                              tail_pred=1,
+                                                              output=output,
+                                                              max_num=100,
+                                                              device=self.device)
                         
-            return mrr, mean_rank, median_rank, hits5, hits10
+            return mrr, hits_at_1, hits_at_5, hits_at_10
             
 ###HELPER FUNCIONS### 
-
-def get_data(g):
-    relations = list(set(g.predicates()))
-    nodes = list(set(g.subjects()).union(set(g.objects())))
-    relations_dict = {rel: i for i, rel in enumerate(relations)}
-    nodes_dict = {node: i for i, node in enumerate(nodes)}
-
-    edge_data = defaultdict(list)
-    for s, p, o in g.triples((None, None, None)):
-        src, dst, rel = nodes_dict[s], nodes_dict[o], relations_dict[p]
-        edge_data['edge_index'].append([src, dst])
-        edge_data['edge_type'].append(rel)
-    
-    data = HeteroData(edge_index=torch.tensor(edge_data['edge_index'], dtype=torch.long).t().contiguous(),
-                      edge_type=torch.tensor(edge_data['edge_type'], dtype=torch.long))
-    return data, nodes, nodes_dict, relations, relations_dict
 
 def split_edges(data, test_ratio = 0.2, val_ratio = 0):    
     row, col = data.edge_index
@@ -136,9 +131,11 @@ def eval_hits(edge_index, tail_pred, output, max_num, device):
     mrr = 0
     mean_rank = 0
     rank_vals = []
+    top1 = 0
     top5 = 0
     top10 = 0
-    n = edge_index.size(1)
+    if edge_index.size(1) <= 100: n = edge_index.size(1)
+    else: n = 100
 
     for idx in range(n):
         if tail_pred == 1:
@@ -168,11 +165,13 @@ def eval_hits(edge_index, tail_pred, output, max_num, device):
         mrr += 1/(rank+1)
         mean_rank += rank
         rank_vals.append(rank)
+        if rank <= 1:
+            top1 += 1
         if rank <= 5:
             top5 += 1
         if rank <= 10:
             top10 += 1
-    return mrr/n, mean_rank/n,  np.median(rank_vals), top5/n, top10/n
+    return mrr/n, top1/n, top5/n, top10/n 
 
 def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num, device):
     num_neg_samples = 0
@@ -203,3 +202,156 @@ def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num, devic
         candidates.append(true_head.item())
         candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_head)])
     return candidates, candidates_embeds.to(device)
+
+def rdf_to_edge_index(g: rdflib.Graph, node2id: dict, rel2id: dict):
+    """Convert RDF triples to edge_index and edge_type tensors"""
+    src, dst, rel = [], [], []
+    for s, p, o in g:
+        if s not in node2id:
+            node2id[s] = len(node2id)
+        if o not in node2id:
+            node2id[o] = len(node2id)
+        if p not in rel2id:
+            rel2id[p] = len(rel2id)
+        src.append(node2id[s])
+        dst.append(node2id[o])
+        rel.append(rel2id[p])
+    edge_index = torch.tensor([src, dst], dtype=torch.long)
+    edge_type = torch.tensor(rel, dtype=torch.long)
+    return edge_index, edge_type
+
+def get_specific_test_edge_type(data, target_type, multiple):
+    data_copy = data.clone()   
+    if multiple:
+        mask = torch.isin(
+        data_copy['test_edge_type'], 
+        torch.tensor(target_type, dtype=data_copy['test_edge_type'].dtype)
+    )
+    else:   
+        mask = data_copy['test_edge_type'] == target_type
+    data_copy.test_pos_edge_index = data_copy['test_pos_edge_index'][:, mask]
+    data_copy.test_edge_type = data_copy['test_edge_type'][mask]
+    return data_copy
+
+def train_gnn_reasoner(dataset_name, device, iteration=0, epochs=300):    
+    g_train = rdflib.Graph()
+    g_train.parse(f"datasets/{dataset_name}_train.owl")
+
+    g_test = rdflib.Graph()
+    g_test.parse(f"datasets/{dataset_name}_test.owl")
+    _, _, _, _, relations_dict_test = get_data(g_test)
+
+    g_val = rdflib.Graph()
+    g_val.parse(f"datasets/{dataset_name}_val.owl")
+
+    # Initialize mapping dictionaries
+    node2id = {}
+    rel2id = {}
+
+    # Convert RDF graphs to edge_index tensors
+    train_edge_index, train_edge_type = rdf_to_edge_index(g_train, node2id, rel2id)
+    val_edge_index, val_edge_type = rdf_to_edge_index(g_val, node2id, rel2id)
+    test_edge_index, test_edge_type = rdf_to_edge_index(g_test, node2id, rel2id)
+
+    # Create HeteroData object
+    data = HeteroData(
+        train_pos_edge_index=train_edge_index,
+        train_edge_type=train_edge_type,
+        val_pos_edge_index=val_edge_index,
+        val_edge_type=val_edge_type,
+        test_pos_edge_index=test_edge_index,
+        test_edge_type=test_edge_type
+    )
+
+    nodes = list({n for g in [g_train, g_test, g_val] for n in list(g.subjects()) + list(g.objects())})
+    relations = list({n for g in [g_train, g_test, g_val] for n in list(g.predicates())})
+
+    model = GNN(device, len(nodes), len(relations))    
+    for epoch in range(epochs+1):
+        loss = model._train(data.to(device))
+        if epoch % 50 == 0:
+            logging.info(f'Epoch {epoch}, Loss: {loss:.4f}')
+
+    os.makedirs("models/RGCN_reasoner", exist_ok=True)  
+    torch.save(model, f'models/RGCN_reasoner/{dataset_name}_{iteration}')
+    return model, data, relations_dict_test
+
+def compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, mode):
+    if 'subsumption' in mode:
+        target_type = relations_dict_test[RDFS.subClassOf]
+        multiple = False
+    elif 'membership' in mode:
+        target_type = relations_dict_test[RDF.type]
+        multiple = False
+    elif 'link_prediction' in mode:
+        NS = get_namespace(dataset_name)
+        keys_list = [key for key in relations_dict_test.keys() if key.startswith(NS)]
+        target_type = [relations_dict_test[key] for key in keys_list if key in relations_dict_test]
+        multiple = True
+    mrr, hits_at_1, hits_at_5, hits_at_10 = model._eval(data.to(device), target_type, multiple)
+    return (mrr, hits_at_1, hits_at_5, hits_at_10)
+
+def test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device):
+    logger.info("Testing ontology completion...")
+
+    logger.info('Membership:')
+    membership_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_membership") 
+    mrr, hits_at_1, hits_at_5, hits_at_10 = membership_metrics
+    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
+    
+    logger.info('Subsumption:')
+    subsumption_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_subsumption")
+    mrr, hits_at_1, hits_at_5, hits_at_10 = subsumption_metrics
+    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
+   
+    logger.info('Link Prediction:')
+    link_prediction_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_link_prediction")
+    mrr, hits_at_1, hits_at_5, hits_at_10 = link_prediction_metrics
+    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
+    
+    return subsumption_metrics, membership_metrics, link_prediction_metrics
+
+def run_rgcn(device, experiments):
+    os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
+    for experiment in experiments:
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']
+        
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []
+        
+        for i in range(5):
+            model, data, relations_dict_test = train_gnn_reasoner(dataset_name, device, iteration=i, epochs=300)
+            
+            logging.info(f'{file_name}:')
+            metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device)
+
+            subsumption_results.append(metrics_subsumption)
+            membership_results.append(metrics_membership)
+            link_prediction_results.append(metrics_link_prediction)
+
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/rgcn_reasoner/{file_name}.txt')
+
+def run_rgcn_test(device, experiments):
+    os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
+    for experiment in experiments:
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']
+        
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []
+        
+        model, data, relations_dict_test = train_gnn_reasoner(dataset_name, device, iteration=0, epochs=300)
+        
+        logging.info(f'{file_name}:')
+        metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device)
+
+        subsumption_results.append(metrics_subsumption)
+        membership_results.append(metrics_membership)
+        link_prediction_results.append(metrics_link_prediction)
+
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/rgcn_reasoner/{file_name}_test.txt')
+
+        break

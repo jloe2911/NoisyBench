@@ -13,40 +13,56 @@ from src.utils import get_experiments
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the pipeline")
-    parser.add_argument("--dataset_name", type=str, required=True, help="Dataset name", choices=['family', 'OWL2DL-1'])
-    args = parser.parse_args()
-
-    dataset_name = args.dataset_name
-
-    experiments = get_experiments(dataset_name)
-
-    # Step 1: Graph Construction per Resource
-
-    generate_graphs(dataset_name)
-
-    # Step 2: Run the Reasoner
-
-    try:
-        subprocess.run(
-            ["python", "reasoner.py", dataset_name],
-            cwd="pellet", # change working directory to 'pellet'
-            check=True
-        )
-        logger.info("Reasoning completed successfully.")
-    except subprocess.CalledProcessError as e:
-        logger.info(f"Reasoning failed with error: {e}")
-
-    # Step 3: Filter Inferences
-
-    run_filtering(dataset_name)
-
-    # Step 4: Build Train, Test and Validation Graphs
-
-    train_file, test_file, val_file = build_rdf_datasets(
-        dataset_name=dataset_name,
-        test_size=0.5,
-        seed=1
+    parser.add_argument(
+        "--dataset_name", 
+        type=str, 
+        required=True, 
+        help="Dataset name", 
+        choices=['family', 'OWL2DL-1']
     )
 
+    # flags for each step
+    parser.add_argument("--steps", nargs="+", choices=["graphs", "reasoner", "filter", "split", "noise", "all"],
+                        default=["all"],
+                        help="Which steps to run. Default: all")
+
+    args = parser.parse_args()
+    dataset_name = args.dataset_name
+    experiments = get_experiments(dataset_name)
+
+    # normalize steps
+    steps = args.steps
+    if "all" in steps:
+        steps = ["graphs", "reasoner", "filter", "split", "noise"]
+
+    # Step 1: Graph Construction per Resource
+    if "graphs" in steps:
+        generate_graphs(dataset_name)
+
+    # Step 2: Run the Reasoner
+    if "reasoner" in steps:
+        try:
+            subprocess.run(
+                ["python", "reasoner.py", dataset_name],
+                cwd="pellet",  # change working directory to 'pellet'
+                check=True
+            )
+            logger.info("Reasoning completed successfully.")
+        except subprocess.CalledProcessError as e:
+            logger.info(f"Reasoning failed with error: {e}")
+
+    # Step 3: Filter Inferences
+    if "filter" in steps:
+        run_filtering(dataset_name)
+
+    # Step 4: Build Train, Test and Validation Graphs
+    if "split" in steps:
+        train_file, test_file, val_file = build_rdf_datasets(
+            dataset_name=dataset_name,
+            test_size=0.5,
+            seed=1
+        )
+
     # Step 5: Create Noise
-    add_noise_to_dataset(dataset_name, experiments)
+    if "noise" in steps:
+        add_noise_to_dataset(dataset_name, experiments)

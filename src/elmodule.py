@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from itertools import cycle
 
@@ -6,14 +7,21 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch import nn
 
+from consts import JVM_MEMORY
 import mowl
-mowl.init_jvm('10g')
+mowl.init_jvm(JVM_MEMORY)
+from mowl.datasets import Dataset
 from mowl.base_models import EmbeddingELModel
 from mowl.nn import ELEmModule, ELBEModule, BoxSquaredELModule
 from mowl.utils.data import FastTensorDataLoader
+from org.semanticweb.owlapi.apibinding import OWLManager
+import java.io
 
-from src.utils import *
-from src.noise import *
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+from src.utils import preprocess_ontology_el, save_results
 
 class ELModule(nn.Module):
     def __init__(self, module_name, dim, nb_classes, nb_individuals, nb_roles):
@@ -171,7 +179,7 @@ class ElModel(EmbeddingELModel):
             train_el_loss /= len(main_dl)
             train_abox_loss /= len(main_dl)
             if (epoch % 25) == 0:
-                print(f'Epoch: {epoch}, Training: EL loss: {train_el_loss:.4f}, ABox loss: {train_abox_loss:.4f}')
+                logger.info(f'Epoch: {epoch}, Training: EL loss: {train_el_loss:.4f}, ABox loss: {train_abox_loss:.4f}')
             
     def predict(self, heads, rels, tails, mode):
         aux = heads.to(self.device)
@@ -260,5 +268,113 @@ class ElModel(EmbeddingELModel):
             hits_at_5 /= eval_dl.dataset_len
             hits_at_10 /= eval_dl.dataset_len
 
-            print(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+            logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
             return (mrr, hits_at_1, hits_at_5, hits_at_10)
+
+def run_box2el(device, experiments):
+
+    os.makedirs(f'models/results/box2el/', exist_ok=True)
+
+    for experiment in experiments: 
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']  
+
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []
+        
+        for _ in range(5):                                                                                                     
+
+            train_manager = OWLManager.createOWLOntologyManager()
+            test_manager = OWLManager.createOWLOntologyManager()
+            val_manager = OWLManager.createOWLOntologyManager()
+
+            train_ontology = train_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_train.owl')) # we add noise to train
+            test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_test.owl'))
+            val_ontology = val_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_val.owl'))
+    
+            train_ont = preprocess_ontology_el(train_ontology)
+            test_ont = preprocess_ontology_el(test_ontology)
+            valid_ont = preprocess_ontology_el(val_ontology)
+
+            dataset = Dataset(train_ont, testing=test_ont, validation=valid_ont)
+            
+            model = ElModel(dataset, 
+                            module_name='box2el', 
+                            dim=200, 
+                            margin=0.1, 
+                            batch_size=4096*8, 
+                            test_batch_size=32, 
+                            epochs=300, 
+                            learning_rate=0.001,
+                            device=device)
+            
+            model._train()
+            
+            logger.info(f'{file_name}:')
+            logger.info('Membership:')
+            metrics_membership = model._eval('membership')
+            logger.info('Subsumption:')
+            metrics_subsumption = model._eval('subsumption')
+            logger.info('Link Prediction:')
+            metrics_link_prediction = model._eval('link_prediction')
+
+            subsumption_results.append(metrics_subsumption)
+            membership_results.append(metrics_membership)
+            link_prediction_results.append(metrics_link_prediction)
+
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/box2el/{file_name}.txt')
+
+def run_box2el_test(device, experiments):
+
+    os.makedirs(f'models/results/box2el/', exist_ok=True)
+
+    for experiment in experiments: 
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']  
+
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []                                                                                         
+
+        train_manager = OWLManager.createOWLOntologyManager()
+        test_manager = OWLManager.createOWLOntologyManager()
+        val_manager = OWLManager.createOWLOntologyManager()
+
+        train_ontology = train_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_train.owl')) # we add noise to train
+        test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_test.owl'))
+        val_ontology = val_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_val.owl'))
+
+        train_ont = preprocess_ontology_el(train_ontology)
+        test_ont = preprocess_ontology_el(test_ontology)
+        valid_ont = preprocess_ontology_el(val_ontology)
+
+        dataset = Dataset(train_ont, testing=test_ont, validation=valid_ont)
+        
+        model = ElModel(dataset, 
+                        module_name='box2el', 
+                        dim=200, 
+                        margin=0.1, 
+                        batch_size=4096*8, 
+                        test_batch_size=32, 
+                        epochs=300, 
+                        learning_rate=0.001,
+                        device=device)
+        
+        model._train()
+        
+        logger.info(f'{file_name}:')
+        logger.info('Membership:')
+        metrics_membership = model._eval('membership')
+        logger.info('Subsumption:')
+        metrics_subsumption = model._eval('subsumption')
+        logger.info('Link Prediction:')
+        metrics_link_prediction = model._eval('link_prediction')
+
+        subsumption_results.append(metrics_subsumption)
+        membership_results.append(metrics_membership)
+        link_prediction_results.append(metrics_link_prediction)
+
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/box2el/{file_name}_test.txt')
+
+        break

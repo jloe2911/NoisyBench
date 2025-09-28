@@ -12,14 +12,6 @@ from src.noise import train_gnn, get_disjoint_classes, get_disjoint_properties, 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'  # Override for consistency
 
-def get_namespace(dataset_name: str):
-    if dataset_name == 'family':
-        return Namespace("http://www.example.com/genealogy.owl#")
-    elif dataset_name.startswith('OWL2DL-'):
-        return Namespace("https://kracr.iiitd.edu.in/OWL2Bench#")
-    else:
-        raise ValueError(f"Unknown dataset: {dataset_name}")
-
 def load_graphs(dataset_name: str):
     g = rdflib.Graph()
     g.parse(f'ontologies/{dataset_name}.owl', format='xml')

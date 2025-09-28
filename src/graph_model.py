@@ -1,3 +1,4 @@
+import os
 import rdflib
 import pandas as pd
 import pickle as pkl
@@ -5,8 +6,9 @@ import torch as th
 
 from pykeen.triples import TriplesFactory
 
+from consts import JVM_MEMORY
 import mowl
-mowl.init_jvm('10g')
+mowl.init_jvm(JVM_MEMORY)
 from mowl.projection import OWL2VecStarProjector
 from mowl.datasets import Dataset
 from mowl.utils.data import FastTensorDataLoader
@@ -18,7 +20,6 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-from src.utils import get_individuals
 from src.noise import get_possible_predicates
 from src.kge import KGEModule
 class GraphModel():
@@ -126,28 +127,24 @@ class GraphModel():
         if mode == "train":
             graph.to_csv(path, sep="\t", header=None, index=False)
         elif "subsumption" in mode:
-            graph = graph[graph["relation"] == "http://subclassof"]                 
+            graph = graph[graph["relation"] == "http://subclassof"]
             graph.to_csv(path, sep="\t", header=None, index=False)
         elif "membership" in mode:
             graph = graph[graph["relation"] == "http://type"]
             graph.to_csv(path, sep="\t", header=None, index=False)
         elif "link_prediction" in mode:
-            g_test = rdflib.Graph()
-            g_test.parse(self.test_path)
-            _, individuals, _ = get_individuals(g_test)
-            individuals = [str(x) for x in individuals]
-            possible_predicates = get_possible_predicates(g_test)
-
-            graph = graph[(graph['relation'].isin(possible_predicates)) & (graph['head'].isin(individuals)) & (graph['tail'].isin(individuals))] 
+            graph = graph[~graph["relation"].isin(
+                ["http://type", "http://subclassof", "http://superclassof"]
+            )]
             graph.to_csv(path, sep="\t", header=None, index=False)
 
         graph = pd.read_csv(path, sep="\t", header=None)
         graph.columns = ["head", "relation", "tail"]
-                
+
         logger.info(f"Loaded {mode} graph with {len(graph)} edges")
-        
+
         return graph
-      
+
     @property
     def train_graph(self):
         if self._train_graph is not None:
@@ -266,7 +263,8 @@ class GraphModel():
         if self._model_path is not None:
             return self._model_path
 
-        self._model_path = f"models/owl2vec_{self.file_name}_{self.iteration}.model.pt"
+        os.makedirs(f'models/owl2vec', exist_ok=True)
+        self._model_path = f"models/owl2vec/{self.file_name}_{self.iteration}.model.pt"
         return self._model_path
 
     @property
@@ -274,25 +272,26 @@ class GraphModel():
         if self._node_to_id is not None:
             return self._node_to_id
 
-        graph_classes = set(self.train_graph["head"].unique()) | set(self.train_graph["tail"].unique())
-        graph_classes |= set(self.valid_subsumption_graph["head"].unique()) | set(self.valid_subsumption_graph["tail"].unique())
-        graph_classes |= set(self.valid_membership_graph["head"].unique()) | set(self.valid_membership_graph["tail"].unique())
-        graph_classes |= set(self.valid_link_prediction_graph["head"].unique()) | set(self.valid_link_prediction_graph["tail"].unique())
-        graph_classes |= set(self.test_subsumption_graph["head"].unique()) | set(self.test_subsumption_graph["tail"].unique())
-        graph_classes |= set(self.test_membership_graph["head"].unique()) | set(self.test_membership_graph["tail"].unique())
-        graph_classes |= set(self.test_link_prediction_graph["head"].unique()) | set(self.test_link_prediction_graph["tail"].unique())
-        
-        bot = "http://www.w3.org/2002/07/owl#Nothing"
-        top = "http://www.w3.org/2002/07/owl#Thing"
-        graph_classes.add(bot)
-        graph_classes.add(top)
-                
-        ont_classes = set(self.classes)
-        all_classes = list(graph_classes | ont_classes | set(self.individuals)) 
-        all_classes.sort()
-        self._node_to_id = {c: i for i, c in enumerate(all_classes)}
+        # Collect all nodes from all graphs
+        graph_nodes = set(self.train_graph["head"]).union(self.train_graph["tail"])
+        graph_nodes |= set(self.valid_subsumption_graph["head"]).union(self.valid_subsumption_graph["tail"])
+        graph_nodes |= set(self.valid_membership_graph["head"]).union(self.valid_membership_graph["tail"])
+        graph_nodes |= set(self.valid_link_prediction_graph["head"]).union(self.valid_link_prediction_graph["tail"])
+        graph_nodes |= set(self.test_subsumption_graph["head"]).union(self.test_subsumption_graph["tail"])
+        graph_nodes |= set(self.test_membership_graph["head"]).union(self.test_membership_graph["tail"])
+        graph_nodes |= set(self.test_link_prediction_graph["head"]).union(self.test_link_prediction_graph["tail"])
+
+        # Add OWL top/bottom
+        graph_nodes.add("http://www.w3.org/2002/07/owl#Nothing")
+        graph_nodes.add("http://www.w3.org/2002/07/owl#Thing")
+
+        # Add ontology classes and individuals
+        all_nodes = graph_nodes.union(set(self.classes), set(self.individuals))
+        all_nodes = sorted(list(all_nodes))
+
+        self._node_to_id = {n: i for i, n in enumerate(all_nodes)}
         logger.info(f"Number of graph nodes: {len(self._node_to_id)}")
-        
+
         return self._node_to_id
     
     @property
@@ -363,9 +362,18 @@ class GraphModel():
         if self._individuals_ids is not None:
             return self._individuals_ids
 
-        individual_to_id = {c: self.node_to_id[c] for c in self.individuals}
-        individual_to_id = th.tensor(list(individual_to_id.values()), dtype=th.long, device=self.device)
+        # Include all individuals in the graph (train + link prediction)
+        lp_nodes = set(self.valid_link_prediction_graph['head']).union(
+                set(self.valid_link_prediction_graph['tail']))
+        lp_nodes |= set(self.test_link_prediction_graph['head']).union(
+                    set(self.test_link_prediction_graph['tail']))
+
+        individual_nodes = set(self.individuals).union(lp_nodes)
+
+        individual_to_id = [self.node_to_id[i] for i in individual_nodes]
+        individual_to_id = th.tensor(individual_to_id, dtype=th.long, device=self.device)
         self._individuals_ids = individual_to_id
+
         return self._individuals_ids
 
     def create_graph_dataloader(self, mode="train", batch_size=None):        

@@ -1,10 +1,15 @@
 import numpy as np
 from datetime import datetime
 import rdflib
-from rdflib import URIRef
+from rdflib import URIRef, Namespace
+from collections import defaultdict
 
+import torch
+from torch_geometric.data import HeteroData
+
+from consts import JVM_MEMORY
 import mowl
-mowl.init_jvm('10g')
+mowl.init_jvm(JVM_MEMORY)
 from mowl.owlapi import OWLAPIAdapter
 from org.semanticweb.owlapi.model.parameters import Imports
 from java.util import HashSet
@@ -12,6 +17,22 @@ from java.util import HashSet
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+def get_data(g):
+    relations = list(set(g.predicates()))
+    nodes = list(set(g.subjects()).union(set(g.objects())))
+    relations_dict = {rel: i for i, rel in enumerate(relations)}
+    nodes_dict = {node: i for i, node in enumerate(nodes)}
+
+    edge_data = defaultdict(list)
+    for s, p, o in g.triples((None, None, None)):
+        src, dst, rel = nodes_dict[s], nodes_dict[o], relations_dict[p]
+        edge_data['edge_index'].append([src, dst])
+        edge_data['edge_type'].append(rel)
+    
+    data = HeteroData(edge_index=torch.tensor(edge_data['edge_index'], dtype=torch.long).t().contiguous(),
+                      edge_type=torch.tensor(edge_data['edge_type'], dtype=torch.long))
+    return data, nodes, nodes_dict, relations, relations_dict
 
 def copy_graph(g):
     new_g = rdflib.Graph()
@@ -238,3 +259,11 @@ def save_results(subsumption_results, membership_results, link_prediction_result
         f.write(format_metrics("Link Prediction", link_prediction_results))
     
     logger.info(f"Results saved to {results_dir}")
+
+def get_namespace(dataset_name: str):
+    if dataset_name == 'family':
+        return Namespace("http://www.example.com/genealogy.owl#")
+    elif dataset_name.startswith('OWL2DL-'):
+        return Namespace("https://kracr.iiitd.edu.in/OWL2Bench#")
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")

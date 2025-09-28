@@ -108,4 +108,47 @@ def run_owl2vec(dataset_name, device, experiments):
             membership_results.append(metrics_membership)
             link_prediction_results.append(metrics_link_prediction)
 
-            save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/owl2vec/{file_name}.txt')
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/owl2vec/{file_name}.txt')
+
+def run_owl2vec_test(dataset_name, device, experiments):
+    os.makedirs(f'datasets/bin/owl2vec/{dataset_name}', exist_ok=True)
+    os.makedirs(f'models/results/owl2vec/', exist_ok=True)
+
+    for experiment in experiments:
+        dataset_name = experiment['dataset_name']
+        file_name = experiment['file_name']
+        
+        subsumption_results = []
+        membership_results = []
+        link_prediction_results = []
+        
+        model = OWL2Vec(
+            file_name=file_name,
+            iteration = 0, 
+            dataset_name=dataset_name,
+            kge_model='transe',
+            emb_dim=256,
+            margin=0.1,
+            weight_decay=0.0,
+            batch_size=4096*8,
+            lr=0.0001,
+            num_negs=4,
+            test_batch_size=32,
+            epochs=500,
+            device=device,
+            seed=42,
+            initial_tolerance=5
+        )
+        
+        model.train()
+        
+        logging.info(f'{file_name}:')
+        metrics_subsumption, metrics_membership, metrics_link_prediction = model.test()
+
+        subsumption_results.append(metrics_subsumption)
+        membership_results.append(metrics_membership)
+        link_prediction_results.append(metrics_link_prediction)
+
+        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/owl2vec/{file_name}_test.txt')
+
+        break
