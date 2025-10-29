@@ -107,22 +107,28 @@ class ElModel(EmbeddingELModel):
         return torch.tensor(idxs), torch.FloatTensor(labels)
                                                                   
     def _train(self):
+        # Prepare ABox data
         abox_ds_train = self.get_abox_data("train")
         abox_dl_train = FastTensorDataLoader(*abox_ds_train, batch_size=self.batch_size, shuffle=True)
 
-        el_dls = {gci_name: DataLoader(ds, batch_size=self.batch_size, shuffle=True) for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
+        # Prepare EL datasets (GCI and object property assertions)
+        el_dls = {gci_name: DataLoader(ds, batch_size=self.batch_size, shuffle=True)
+                for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
         el_dls_sizes = {gci_name: len(ds) for gci_name, ds in self.training_datasets.items() if len(ds) > 0}
 
-        if len(self.dataset.individuals) > el_dls_sizes["gci0"]:
+        # Decide main loader
+        if len(self.dataset.individuals) > el_dls_sizes.get("gci0", 0):
             main_dl = abox_dl_train
             main_dl_name = "abox"
         else:
             main_dl = el_dls["gci0"]
             main_dl_name = "gci0"
 
+        # Compute weights for EL losses
         total_el_dls_size = sum(el_dls_sizes.values())
         el_dls_weights = {gci_name: ds_size / total_el_dls_size for gci_name, ds_size in el_dls_sizes.items()}
 
+        # Cycle EL loaders for multi-GCI training
         if main_dl_name == "gci0":
             el_dls = {gci_name: cycle(dl) for gci_name, dl in el_dls.items() if gci_name != "gci0"}
             abox_dl_train = cycle(abox_dl_train)
@@ -139,6 +145,7 @@ class ElModel(EmbeddingELModel):
             train_abox_loss = 0
 
             for batch_data in main_dl:
+                # Get batch for main loader
                 if main_dl_name == "abox":
                     ind_idxs, labels = batch_data
                     gci0_batch = next(el_dls["gci0"]).to(self.device)
@@ -146,33 +153,54 @@ class ElModel(EmbeddingELModel):
                     ind_idxs, labels = next(abox_dl_train)
                     gci0_batch = batch_data.to(self.device)
 
+                # --- GCI0 positive and negative loss ---
                 pos_gci0 = module.tbox_forward(gci0_batch, "gci0").mean() * el_dls_weights["gci0"]
-                neg_idxs = np.random.choice(self.nb_classes, size=len(gci0_batch), replace=True)
-                neg_batch = torch.tensor(neg_idxs, dtype=torch.long, device=self.device)
+
+                # Negative sampling: choose random classes for GCI0 (as before)
+                neg_classes = np.random.choice(self.nb_classes, size=len(gci0_batch), replace=True)
+                neg_batch = torch.tensor(neg_classes, dtype=torch.long, device=self.device)
                 neg_data = torch.cat((gci0_batch[:, :1], neg_batch.unsqueeze(1)), dim=1)
                 neg_gci0 = module.tbox_forward(neg_data, "gci0").mean() * el_dls_weights["gci0"]
 
                 el_loss = -F.logsigmoid(-pos_gci0 + neg_gci0 - self.margin).mean()
 
+                # --- Other GCI batches ---
                 for gci_name, gci_dl in el_dls.items():
                     if gci_name == "gci0":
                         continue
                     gci_batch = next(gci_dl).to(self.device)
+
                     pos_gci = module.tbox_forward(gci_batch, gci_name).mean() * el_dls_weights[gci_name]
-                    neg_idxs = np.random.choice(self.nb_classes, size=len(gci_batch), replace=True)
-                    neg_batch = torch.tensor(neg_idxs, dtype=torch.long, device=self.device)
-                    neg_data = torch.cat((gci_batch[:, :2], neg_batch.unsqueeze(1)), dim=1)
+
+                    # Negative sampling: choose appropriate type
+                    if gci_name == "object_property_assertion":
+                        # Tail is individual
+                        neg_tails = np.random.choice(self.nb_individuals, size=len(gci_batch), replace=True)
+                    else:
+                        # Assume last column is class for other GCIs
+                        neg_tails = np.random.choice(self.nb_classes, size=len(gci_batch), replace=True)
+
+                    neg_batch = torch.tensor(neg_tails, dtype=torch.long, device=self.device)
+                    
+                    if gci_name == "object_property_assertion":
+                        neg_data = torch.cat((gci_batch[:, :2], neg_batch.unsqueeze(1)), dim=1)
+                    else:
+                        neg_data = torch.cat((gci_batch[:, :2], neg_batch.unsqueeze(1)), dim=1)
+
                     neg_gci = module.tbox_forward(neg_data, gci_name).mean() * el_dls_weights[gci_name]
 
                     el_loss += -F.logsigmoid(-pos_gci + neg_gci - self.margin).mean()
 
+                # --- ABox loss ---
                 abox_logits = module.abox_forward(ind_idxs.to(self.device))
                 abox_loss = F.binary_cross_entropy_with_logits(abox_logits, labels.to(self.device))
 
-                loss = el_loss + abox_loss 
+                # --- Backprop ---
+                loss = el_loss + abox_loss
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+
                 train_el_loss += el_loss.item()
                 train_abox_loss += abox_loss.item()
 
@@ -180,7 +208,7 @@ class ElModel(EmbeddingELModel):
             train_abox_loss /= len(main_dl)
             if (epoch % 25) == 0:
                 logger.info(f'Epoch: {epoch}, Training: EL loss: {train_el_loss:.4f}, ABox loss: {train_abox_loss:.4f}')
-            
+                
     def predict(self, heads, rels, tails, mode):
         aux = heads.to(self.device)
         num_heads = len(heads)
@@ -256,11 +284,11 @@ class ElModel(EmbeddingELModel):
                     ranks[rank] += 1
 
                     mrr += 1/(rank+1)
-                    if rank < 1:
+                    if rank <= 1:
                         hits_at_1 += 1
-                    if rank < 5:
+                    if rank <= 5:
                         hits_at_5 += 1
-                    if rank < 10:
+                    if rank <= 10:
                         hits_at_10 += 1
                         
             mrr /= eval_dl.dataset_len
@@ -301,9 +329,9 @@ def run_box2el(device, experiments):
             
             model = ElModel(dataset, 
                             module_name='box2el', 
-                            dim=200, 
+                            dim=256, 
                             margin=0.1, 
-                            batch_size=4096*8, 
+                            batch_size=8192, 
                             test_batch_size=32, 
                             epochs=300, 
                             learning_rate=0.001,
@@ -353,11 +381,11 @@ def run_box2el_test(device, experiments):
         
         model = ElModel(dataset, 
                         module_name='box2el', 
-                        dim=200, 
+                        dim=256, 
                         margin=0.1, 
-                        batch_size=4096*8, 
+                        batch_size=8192, 
                         test_batch_size=32, 
-                        epochs=300, 
+                        epochs=25, 
                         learning_rate=0.001,
                         device=device)
         

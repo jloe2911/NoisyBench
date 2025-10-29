@@ -10,7 +10,7 @@ from src.utils import get_experiments
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the pipeline")
-    parser.add_argument("--dataset_name", type=str, required=True, help="Dataset name", choices=['family', 'OWL2DL-1'])
+    parser.add_argument("--dataset_name", type=str, required=True, help="Dataset name", choices=['pizza', 'family', 'OWL2DL-1'])
     parser.add_argument("--reasoner", type=str, required=True, help="Neurosymbolic reasoner to use", choices=["owl2vec", "box2el", "rgcn"])
     args = parser.parse_args()
 
@@ -21,15 +21,15 @@ if __name__ == "__main__":
 
     if reasoner == 'owl2vec':
         from src.owl2vec import run_owl2vec, run_owl2vec_test
-        # run_owl2vec(dataset_name, 'cpu', experiments)
-        run_owl2vec_test(dataset_name, 'cpu', experiments)
+        run_owl2vec(dataset_name, 'cpu', experiments)
+        # run_owl2vec_test(dataset_name, 'cpu', experiments)
 
     elif reasoner == 'box2el':
         from src.elmodule import run_box2el, run_box2el_test
-        # run_box2el('cpu', experiments)
-        run_box2el_test('cpu', experiments)
+        run_box2el('cpu', experiments)
+        # run_box2el_test('cpu', experiments)
 
     elif reasoner == 'rgcn':
         from src.gnn import run_rgcn, run_rgcn_test
-        # run_rgcn('cpu', experiments)
-        run_rgcn_test('cpu', experiments)
+        run_rgcn('cpu', experiments)
+        # run_rgcn_test('cpu', experiments)

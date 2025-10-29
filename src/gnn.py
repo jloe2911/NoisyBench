@@ -1,25 +1,27 @@
-import os 
-import operator
-import random
+import os
 import math
+import logging
 from collections import defaultdict
-import rdflib
-from rdflib import RDF, RDFS
 
 import torch
 import torch.nn.functional as F
 from torch.nn import Parameter
-
-import torch_geometric
-from torch_geometric.nn import GAE, RGCNConv
+from torch_geometric.nn import RGCNConv
 from torch_geometric.utils import negative_sampling
 from torch_geometric.data import HeteroData
 
-import logging
+import rdflib
+from rdflib import RDF, RDFS
+
+from src.utils import get_data, get_namespace, save_results
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-from src.utils import get_data, get_namespace, save_results
+
+############################
+# Encoder & Decoder Models #
+############################
 
 class RGCNEncoder(torch.nn.Module):
     def __init__(self, num_nodes, hidden_channels, num_relations):
@@ -40,7 +42,8 @@ class RGCNEncoder(torch.nn.Module):
         x = F.dropout(x, p=0.2, training=self.training)
         x = self.conv2(x, edge_index, edge_type)
         return x
-    
+
+
 class DistMultDecoder(torch.nn.Module):
     def __init__(self, num_relations, hidden_channels):
         super().__init__()
@@ -54,57 +57,146 @@ class DistMultDecoder(torch.nn.Module):
         z_src, z_dst = z[edge_index[0]], z[edge_index[1]]
         rel = self.rel_emb[edge_type]
         return torch.sum(z_src * rel * z_dst, dim=1)
-    
-class GNN():
-    def __init__(self, device, num_nodes, num_relations):
+
+
+#####################
+# GNN Core Wrapper  #
+#####################
+
+class GNN(torch.nn.Module):
+    def __init__(self, seed, device, num_nodes, num_relations, rdf_type_id=None):
+        super().__init__()
         self.device = device
         self.hidden_channels = 200
-        self.model = GAE(RGCNEncoder(num_nodes, self.hidden_channels, num_relations),
-                         DistMultDecoder(num_relations, self.hidden_channels)).to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
-        self.seed = 10
-        torch.manual_seed(self.seed)
+        self.encoder = RGCNEncoder(num_nodes, self.hidden_channels, num_relations)
+        self.decoder = DistMultDecoder(num_relations, self.hidden_channels)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+        self.rdf_type_id = rdf_type_id
+        self.class_nodes = None  # filled dynamically
+        torch.manual_seed(seed)
 
-    def _train(self, data):        
-        self.model.train()
+    def encode(self, data):
+        return self.encoder(data.train_pos_edge_index, data.train_edge_type)
+
+    def decode(self, z, edge_index, edge_type):
+        return self.decoder(z, edge_index, edge_type)
+
+    def _train(self, data):
+        self.train()
         self.optimizer.zero_grad()
-        
-        z = self.model.encode(data.train_pos_edge_index, data.train_edge_type)
+        z = self.encode(data)
 
-        pos_out = self.model.decode(z, data.train_pos_edge_index, data.train_edge_type)
+        # --- collect class nodes for rdf:type ---
+        if self.rdf_type_id is not None and self.class_nodes is None:
+            mask = data.train_edge_type == self.rdf_type_id
+            self.class_nodes = data.train_pos_edge_index[1, mask].unique()
 
-        neg_edge_index = negative_sampling(data.train_pos_edge_index, num_neg_samples = data.train_pos_edge_index.size(1))
-        neg_out = self.model.decode(z, neg_edge_index, data.train_edge_type)
+        # --- positive samples ---
+        pos_out = self.decode(z, data.train_pos_edge_index, data.train_edge_type)
 
+        # --- relation-aware negative sampling ---
+        neg_edge_index_list, neg_edge_type_list = [], []
+        for rel in data.train_edge_type.unique():
+            rel_mask = data.train_edge_type == rel
+            pos_edges_rel = data.train_pos_edge_index[:, rel_mask]
+            num_neg = pos_edges_rel.size(1)
+
+            if self.rdf_type_id is not None and rel.item() == self.rdf_type_id:
+                # RDF.type: only corrupt tail (class)
+                src = pos_edges_rel[0]
+                dst = self.class_nodes[torch.randint(0, len(self.class_nodes), (num_neg,), device=z.device)]
+                neg_edges_rel = torch.stack([src, dst], dim=0)
+            else:
+                # Normal relations
+                neg_edges_rel = negative_sampling(
+                    pos_edges_rel, num_nodes=z.size(0), num_neg_samples=num_neg
+                )
+
+            neg_edge_index_list.append(neg_edges_rel)
+            neg_edge_type_list.append(torch.full((num_neg,), rel, dtype=torch.long, device=z.device))
+
+        neg_edge_index = torch.cat(neg_edge_index_list, dim=1)
+        neg_edge_type = torch.cat(neg_edge_type_list, dim=0)
+        neg_out = self.decode(z, neg_edge_index, neg_edge_type)
+
+        # --- loss ---
         out = torch.cat([pos_out, neg_out])
         gt = torch.cat([torch.ones_like(pos_out), torch.zeros_like(neg_out)])
-        cross_entropy_loss = F.binary_cross_entropy_with_logits(out, gt)
-        reg_loss = z.pow(2).mean() + self.model.decoder.rel_emb.pow(2).mean()
-        loss = cross_entropy_loss + 1e-2 * reg_loss
+        loss_ce = F.binary_cross_entropy_with_logits(out, gt)
+        reg_loss = z.pow(2).mean() + self.decoder.rel_emb.pow(2).mean()
+        loss = loss_ce + 1e-2 * reg_loss
 
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.)
+        torch.nn.utils.clip_grad_norm_(self.parameters(), 1.0)
         self.optimizer.step()
-
         return float(loss)
 
     def _eval(self, data, target_type, multiple):
+        self.eval()
         with torch.no_grad():
-            self.model.eval()
-
             new_data = get_specific_test_edge_type(data, target_type, multiple)
+            z = self.encoder(new_data.test_pos_edge_index, new_data.test_edge_type)
+            mrr, hits1, hits5, hits10 = eval_hits_vectorized_typed(
+                edge_index=new_data.test_pos_edge_index,
+                edge_type=new_data.test_edge_type,
+                z=z,
+                rel_emb=self.decoder.rel_emb,
+                rdf_type_id=self.rdf_type_id,
+                class_nodes=self.class_nodes,
+                tail_pred=1,
+                max_num=100,
+                device=self.device
+            )
+        return mrr, hits1, hits5, hits10
 
-            output = self.model.encode(new_data.test_pos_edge_index, new_data.test_edge_type)
 
-            mrr, hits_at_1, hits_at_5, hits_at_10 = eval_hits(edge_index=new_data.test_pos_edge_index,
-                                                              tail_pred=1,
-                                                              output=output,
-                                                              max_num=100,
-                                                              device=self.device)
-                        
-            return mrr, hits_at_1, hits_at_5, hits_at_10
-            
-###HELPER FUNCIONS### 
+###########################################
+#  Efficient Batched Evaluation Functions #
+###########################################
+
+@torch.no_grad()
+def eval_hits_vectorized_typed(edge_index, edge_type, z, rel_emb,
+                               rdf_type_id=None, class_nodes=None,
+                               tail_pred=1, max_num=100, device='cpu'):
+    num_edges = edge_index.size(1)
+    num_nodes = z.size(0)
+    if num_edges == 0:
+        logging.warning("eval_hits_vectorized: got 0 test edges — returning NaNs.")
+        return float('nan'), float('nan'), float('nan'), float('nan')
+
+    src, dst = edge_index
+    rel = rel_emb[edge_type]
+    pos_src, pos_dst = z[src], z[dst]
+    pos_scores = torch.sum(pos_src * rel * pos_dst, dim=1, keepdim=True)
+
+    # --- relation-aware negative sampling for eval ---
+    neg_scores_all = []
+    for i in range(num_edges):
+        r = edge_type[i].item()
+        s = src[i]
+        if rdf_type_id is not None and r == rdf_type_id and class_nodes is not None:
+            neg_nodes = class_nodes[torch.randint(0, len(class_nodes), (max_num,), device=device)]
+        else:
+            neg_nodes = torch.randint(0, num_nodes, (max_num,), device=device)
+
+        neg_embeds = z[neg_nodes]
+        rel_i = rel_emb[r].unsqueeze(0)
+        src_i = z[s].unsqueeze(0)
+        neg_scores = torch.sum(src_i * rel_i * neg_embeds, dim=1)
+        neg_scores_all.append(neg_scores.unsqueeze(0))
+
+    neg_scores = torch.cat(neg_scores_all, dim=0)
+    ranks = (neg_scores > pos_scores).sum(dim=1) + 1
+    mrr = (1.0 / ranks.float()).mean().item()
+    hits1 = (ranks <= 1).float().mean().item()
+    hits5 = (ranks <= 5).float().mean().item()
+    hits10 = (ranks <= 10).float().mean().item()
+    return mrr, hits1, hits5, hits10
+
+
+########################################
+#   Dataset & Graph Processing Utils   #
+########################################
 
 def split_edges(data, test_ratio = 0.2, val_ratio = 0):    
     row, col = data.edge_index
@@ -127,84 +219,7 @@ def split_edges(data, test_ratio = 0.2, val_ratio = 0):
     data.train_edge_type = e
     return data
 
-def eval_hits(edge_index, tail_pred, output, max_num, device):    
-    mrr = 0
-    mean_rank = 0
-    rank_vals = []
-    top1 = 0
-    top5 = 0
-    top10 = 0
-    if edge_index.size(1) <= 100: n = edge_index.size(1)
-    else: n = 100
-
-    for idx in range(n):
-        if tail_pred == 1:
-            x = torch.index_select(output, 0, edge_index[0, idx])
-        else:
-            x = torch.index_select(output, 0, edge_index[1, idx])
-        
-        candidates, candidates_embeds = sample_negative_edges_idx(idx=idx,
-                                                                  edge_index=edge_index,
-                                                                  tail_pred=tail_pred,
-                                                                  output=output,
-                                                                  max_num=max_num,
-                                                                  device=device)
-
-        distances = torch.cdist(candidates_embeds, x, p=2)
-        dist_dict = {cand: dist for cand, dist in zip(candidates, distances)} 
-
-        sorted_dict = dict(sorted(dist_dict.items(), key=operator.itemgetter(1), reverse=True))
-        sorted_keys = list(sorted_dict.keys())
-
-        ranks_dict = {sorted_keys[i]: i for i in range(0, len(sorted_keys))}
-        if tail_pred == 1:
-            rank = ranks_dict[edge_index[1, idx].item()]
-        else:
-            rank = ranks_dict[edge_index[0, idx].item()]
-        
-        mrr += 1/(rank+1)
-        mean_rank += rank
-        rank_vals.append(rank)
-        if rank <= 1:
-            top1 += 1
-        if rank <= 5:
-            top5 += 1
-        if rank <= 10:
-            top10 += 1
-    return mrr/n, top1/n, top5/n, top10/n 
-
-def sample_negative_edges_idx(idx, edge_index, tail_pred, output, max_num, device):
-    num_neg_samples = 0
-    candidates = []
-    nodes = list(range(edge_index.max()))
-    random.shuffle(nodes)
-
-    while num_neg_samples < max_num:    
-        if tail_pred == 1:
-            t = nodes[num_neg_samples]
-            h = edge_index[0, idx].item()
-            if h not in edge_index[0] or t not in edge_index[1]:
-                candidates.append(t)
-        else: 
-            t = edge_index[1, idx].item()
-            h = nodes[num_neg_samples]
-            if h not in edge_index[0] or t not in edge_index[1]:
-                candidates.append(h)
-        num_neg_samples += 1
-    candidates_embeds = torch.index_select(output, 0, torch.tensor(candidates).to(device))
-
-    if tail_pred == 1:
-        true_tail = edge_index[1, idx]
-        candidates.append(true_tail.item())
-        candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_tail)])
-    else:
-        true_head = edge_index[0, idx]
-        candidates.append(true_head.item())
-        candidates_embeds = torch.concat([candidates_embeds, torch.index_select(output, 0, true_head)])
-    return candidates, candidates_embeds.to(device)
-
 def rdf_to_edge_index(g: rdflib.Graph, node2id: dict, rel2id: dict):
-    """Convert RDF triples to edge_index and edge_type tensors"""
     src, dst, rel = [], [], []
     for s, p, o in g:
         if s not in node2id:
@@ -220,61 +235,84 @@ def rdf_to_edge_index(g: rdflib.Graph, node2id: dict, rel2id: dict):
     edge_type = torch.tensor(rel, dtype=torch.long)
     return edge_index, edge_type
 
-def get_specific_test_edge_type(data, target_type, multiple):
-    data_copy = data.clone()   
+
+def get_specific_test_edge_type(data, target_type, multiple, device='cpu'):
+    """
+    Filters the test edges for specific relation types.
+    
+    Args:
+        data (HeteroData): The dataset containing test edges.
+        target_type (int or list[int]): The target relation type(s) to evaluate.
+        multiple (bool): Whether to treat target_type as multiple relations.
+        device (str or torch.device): The device to place filtered tensors on.
+
+    Returns:
+        HeteroData: A copy of data with filtered test edges.
+    """
+    data_copy = data.clone()
+    # Ensure target_type is a tensor
     if multiple:
-        mask = torch.isin(
-        data_copy['test_edge_type'], 
-        torch.tensor(target_type, dtype=data_copy['test_edge_type'].dtype)
-    )
-    else:   
+        if not isinstance(target_type, (list, torch.Tensor)):
+            target_type = [target_type]
+        target_type_tensor = torch.tensor(target_type, dtype=data_copy['test_edge_type'].dtype, device=device)
+        mask = torch.isin(data_copy['test_edge_type'], target_type_tensor)
+    else:
+        # Single relation type
+        if isinstance(target_type, (list, tuple, torch.Tensor)):
+            target_type = target_type[0]  # pick the first if wrapped in list
         mask = data_copy['test_edge_type'] == target_type
-    data_copy.test_pos_edge_index = data_copy['test_pos_edge_index'][:, mask]
-    data_copy.test_edge_type = data_copy['test_edge_type'][mask]
+
+    # Debug: check how many edges remain
+    num_edges = mask.sum().item()
+    if num_edges == 0:
+        logging.warning(f"get_specific_test_edge_type: no test edges found for target_type={target_type}")
+    
+    # Filter edges
+    data_copy.test_pos_edge_index = data_copy['test_pos_edge_index'][:, mask].to(device)
+    data_copy.test_edge_type = data_copy['test_edge_type'][mask].to(device)
+    
     return data_copy
 
-def train_gnn_reasoner(dataset_name, device, iteration=0, epochs=300):    
+
+#############################################
+#     Training, Evaluation, and Logging     #
+#############################################
+
+def train_gnn_reasoner(dataset_name, file_name, device, seed, iteration=0, epochs=500):
     g_train = rdflib.Graph()
     g_train.parse(f"datasets/{dataset_name}_train.owl")
-
     g_test = rdflib.Graph()
     g_test.parse(f"datasets/{dataset_name}_test.owl")
     _, _, _, _, relations_dict_test = get_data(g_test)
-
     g_val = rdflib.Graph()
     g_val.parse(f"datasets/{dataset_name}_val.owl")
 
-    # Initialize mapping dictionaries
     node2id = {}
     rel2id = {}
 
-    # Convert RDF graphs to edge_index tensors
     train_edge_index, train_edge_type = rdf_to_edge_index(g_train, node2id, rel2id)
     val_edge_index, val_edge_type = rdf_to_edge_index(g_val, node2id, rel2id)
     test_edge_index, test_edge_type = rdf_to_edge_index(g_test, node2id, rel2id)
 
-    # Create HeteroData object
-    data = HeteroData(
-        train_pos_edge_index=train_edge_index,
-        train_edge_type=train_edge_type,
-        val_pos_edge_index=val_edge_index,
-        val_edge_type=val_edge_type,
-        test_pos_edge_index=test_edge_index,
-        test_edge_type=test_edge_type
-    )
+    data = HeteroData()
+    data.train_pos_edge_index = train_edge_index
+    data.train_edge_type = train_edge_type
+    data.val_pos_edge_index = val_edge_index
+    data.val_edge_type = val_edge_type
+    data.test_pos_edge_index = test_edge_index
+    data.test_edge_type = test_edge_type
 
-    nodes = list({n for g in [g_train, g_test, g_val] for n in list(g.subjects()) + list(g.objects())})
-    relations = list({n for g in [g_train, g_test, g_val] for n in list(g.predicates())})
+    model = GNN(seed, device, len(node2id), len(rel2id), rdf_type_id=rel2id.get(RDF.type, None)).to(device)
 
-    model = GNN(device, len(nodes), len(relations))    
-    for epoch in range(epochs+1):
+    for epoch in range(epochs + 1):
         loss = model._train(data.to(device))
         if epoch % 50 == 0:
             logging.info(f'Epoch {epoch}, Loss: {loss:.4f}')
 
-    os.makedirs("models/RGCN_reasoner", exist_ok=True)  
-    torch.save(model, f'models/RGCN_reasoner/{dataset_name}_{iteration}')
+    os.makedirs(f"models/RGCN_reasoner/{file_name}/", exist_ok=True)
+    torch.save(model.state_dict(), f'models/RGCN_reasoner/{file_name}/run_{iteration}.pt')
     return model, data, relations_dict_test
+
 
 def compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, mode):
     if 'subsumption' in mode:
@@ -285,73 +323,69 @@ def compute_ranking_metrics(dataset_name, model, data, relations_dict_test, devi
         multiple = False
     elif 'link_prediction' in mode:
         NS = get_namespace(dataset_name)
-        keys_list = [key for key in relations_dict_test.keys() if key.startswith(NS)]
+        keys_list = [key for key in relations_dict_test.keys() if str(key).startswith(NS)]
         target_type = [relations_dict_test[key] for key in keys_list if key in relations_dict_test]
         multiple = True
-    mrr, hits_at_1, hits_at_5, hits_at_10 = model._eval(data.to(device), target_type, multiple)
-    return (mrr, hits_at_1, hits_at_5, hits_at_10)
+    return model._eval(data.to(device), target_type, multiple)
+
 
 def test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device):
     logger.info("Testing ontology completion...")
 
     logger.info('Membership:')
-    membership_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_membership") 
-    mrr, hits_at_1, hits_at_5, hits_at_10 = membership_metrics
-    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
-    
+    membership_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_membership")
+    logger.info(f'MRR: {membership_metrics[0]:.3f}, Hits@1: {membership_metrics[1]:.3f}, Hits@5: {membership_metrics[2]:.3f}, Hits@10: {membership_metrics[3]:.3f}')
+
     logger.info('Subsumption:')
     subsumption_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_subsumption")
-    mrr, hits_at_1, hits_at_5, hits_at_10 = subsumption_metrics
-    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
-   
+    logger.info(f'MRR: {subsumption_metrics[0]:.3f}, Hits@1: {subsumption_metrics[1]:.3f}, Hits@5: {subsumption_metrics[2]:.3f}, Hits@10: {subsumption_metrics[3]:.3f}')
+
     logger.info('Link Prediction:')
-    link_prediction_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_link_prediction")
-    mrr, hits_at_1, hits_at_5, hits_at_10 = link_prediction_metrics
-    logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')      
-    
-    return subsumption_metrics, membership_metrics, link_prediction_metrics
+    link_metrics = compute_ranking_metrics(dataset_name, model, data, relations_dict_test, device, "test_link_prediction")
+    logger.info(f'MRR: {link_metrics[0]:.3f}, Hits@1: {link_metrics[1]:.3f}, Hits@5: {link_metrics[2]:.3f}, Hits@10: {link_metrics[3]:.3f}')
+
+    return subsumption_metrics, membership_metrics, link_metrics
+
 
 def run_rgcn(device, experiments):
     os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
     for experiment in experiments:
         dataset_name = experiment['dataset_name']
         file_name = experiment['file_name']
-        
+
         subsumption_results = []
         membership_results = []
         link_prediction_results = []
-        
+
         for i in range(5):
-            model, data, relations_dict_test = train_gnn_reasoner(dataset_name, device, iteration=i, epochs=300)
-            
-            logging.info(f'{file_name}:')
-            metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device)
+            seed = 42 + i
+            model, data, relations_dict_test = train_gnn_reasoner(dataset_name, file_name, device, seed, iteration=i, epochs=300)
+            logger.info(f'{file_name}:')
+            metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(
+                dataset_name, model, data, relations_dict_test, device
+            )
 
             subsumption_results.append(metrics_subsumption)
             membership_results.append(metrics_membership)
             link_prediction_results.append(metrics_link_prediction)
+        
+        save_results(subsumption_results, membership_results, link_prediction_results,
+                     f'models/results/rgcn_reasoner/{file_name}.txt')
 
-        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/rgcn_reasoner/{file_name}.txt')
 
 def run_rgcn_test(device, experiments):
     os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
     for experiment in experiments:
         dataset_name = experiment['dataset_name']
         file_name = experiment['file_name']
-        
-        subsumption_results = []
-        membership_results = []
-        link_prediction_results = []
-        
-        model, data, relations_dict_test = train_gnn_reasoner(dataset_name, device, iteration=0, epochs=300)
-        
-        logging.info(f'{file_name}:')
-        metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(dataset_name, model, data, relations_dict_test, device)
 
-        subsumption_results.append(metrics_subsumption)
-        membership_results.append(metrics_membership)
-        link_prediction_results.append(metrics_link_prediction)
+        seed = 42 
+        model, data, relations_dict_test = train_gnn_reasoner(dataset_name, file_name, device, seed, iteration=0, epochs=25)
+        logger.info(f'{file_name}:')
+        metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(
+            dataset_name, model, data, relations_dict_test, device
+        )
 
-        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/rgcn_reasoner/{file_name}_test.txt')
-
+        save_results([metrics_subsumption], [metrics_membership], [metrics_link_prediction],
+                     f'models/results/rgcn_reasoner/{file_name}_test.txt')
         break

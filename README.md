@@ -2,7 +2,7 @@
 
 **Benchmarking framework for evaluating neurosymbolic ontology reasoners under noisy conditions.**
 
-**NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2Bench** and **Family**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL** and **OWL2Vec***). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
+**NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2Bench**, **Family** and **Pizza**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL**, **OWL2Vec** and **RGCN**). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
 
 ---
 
@@ -100,12 +100,14 @@ mowl.init_jvm(JVM_MEMORY)
 
 ```bash
 python pipeline_noise.py --dataset_name family
+python pipeline_noise.py --dataset_name pizza
 python pipeline_noise.py --dataset_name OWL2DL-1
 ```
 
 The pipeline uses ontologies stored in the `ontology` folder:
 
 - `family.owl`
+- `pizza.owl`
 - `OWL2Bench.owl`
 
 For each ontology, two additional versions are provided:
@@ -167,6 +169,9 @@ python pipeline_noise.py --dataset_name OWL2DL-1 --steps split
 python pipeline_reasoner.py --dataset_name family --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name family --reasoner box2el
 python pipeline_reasoner.py --dataset_name family --reasoner rgcn
+python pipeline_reasoner.py --dataset_name pizza --reasoner owl2vec
+python pipeline_reasoner.py --dataset_name pizza --reasoner box2el
+python pipeline_reasoner.py --dataset_name pizza --reasoner rgcn
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner box2el
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner rgcn

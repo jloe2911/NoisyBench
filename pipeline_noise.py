@@ -18,7 +18,7 @@ if __name__ == "__main__":
         type=str, 
         required=True, 
         help="Dataset name", 
-        choices=['family', 'OWL2DL-1']
+        choices=['pizza', 'family', 'OWL2DL-1']
     )
 
     # flags for each step
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     if "split" in steps:
         train_file, test_file, val_file = build_rdf_datasets(
             dataset_name=dataset_name,
-            test_size=0.5,
+            test_size=0.1,
             seed=1
         )
 

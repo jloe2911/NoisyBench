@@ -85,17 +85,17 @@ class GraphModel():
         self.valid_path = f'datasets/{self.dataset_name}_val.owl'
         self.test_path = f'datasets/{self.dataset_name}_test.owl'
 
-        self._train_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_train.edgelist'
-        self._valid_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'
-        self._test_subsumption_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_subsumption.edgelist'
-        self._valid_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_membership.edgelist'
-        self._test_membership_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_membership.edgelist'
-        self._valid_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_val_link_prediction.edgelist'
-        self._test_link_prediction_graph_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_test_link_prediction.edgelist'
+        self._train_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_train.edgelist'
+        self._valid_subsumption_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'
+        self._test_subsumption_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_test_subsumption.edgelist'
+        self._valid_membership_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_val_membership.edgelist'
+        self._test_membership_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_test_membership.edgelist'
+        self._valid_link_prediction_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_val_link_prediction.edgelist'
+        self._test_link_prediction_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_test_link_prediction.edgelist'
 
-        self._classes_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_classes.tsv'
-        self._object_properties_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_properties.tsv' 
-        self._individuals_path = f'datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_individuals.tsv' 
+        self._classes_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_classes.tsv'
+        self._object_properties_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_properties.tsv' 
+        self._individuals_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_individuals.tsv' 
 
         train_manager = OWLManager.createOWLOntologyManager()
         test_manager = OWLManager.createOWLOntologyManager()
@@ -350,10 +350,11 @@ class GraphModel():
 
     @property
     def object_properties_ids(self):
-        if self._object_property_ids is not None:
-            return self._object_property_ids
+        if self._object_properties_ids is not None:
+            return self._object_properties_ids
         
         prop_to_id = {c: self.relation_to_id[c] for c in self.object_properties if c in self.relation_to_id}
+        self._object_properties_ids = th.tensor(list(prop_to_id.values()), dtype=th.long, device=self.device)
 
         return self._object_properties_ids
 
@@ -377,6 +378,9 @@ class GraphModel():
         return self._individuals_ids
 
     def create_graph_dataloader(self, mode="train", batch_size=None):        
+        # -----------------------------
+        # Select graph based on mode
+        # -----------------------------
         if mode == "train":
             graph = self.train_graph
         elif mode == "valid_subsumption":
@@ -391,19 +395,39 @@ class GraphModel():
             graph = self.test_membership_graph
         elif mode == "test_link_prediction":
             graph = self.test_link_prediction_graph
-        
-        heads = [self.node_to_id[h] for h in graph["head"]]
-        rels = [self.relation_to_id[r] for r in graph["relation"]]
-        tails = [self.node_to_id[t] for t in graph["tail"]]
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
+        # -----------------------------
+        # Ensure <UNK> exists for unknown relations
+        # -----------------------------
+        if "<UNK>" not in self.relation_to_id:
+            self.relation_to_id["<UNK>"] = len(self.relation_to_id)
+
+        # -----------------------------
+        # Map nodes and relations to IDs
+        # -----------------------------
+        heads = [self.node_to_id[h] for h in graph["head"]]
+        tails = [self.node_to_id[t] for t in graph["tail"]]
+        rels = [self.relation_to_id.get(r, self.relation_to_id["<UNK>"]) for r in graph["relation"]]
+
+        # Convert to torch tensors
         heads = th.LongTensor(heads)
         rels = th.LongTensor(rels)
         tails = th.LongTensor(tails)
-        
-        dataloader = FastTensorDataLoader(heads, rels, tails,
-                                          batch_size=batch_size, 
-                                          shuffle=True)
-        
+
+        # -----------------------------
+        # Create dataloader
+        # -----------------------------
+        if batch_size is None:
+            batch_size = len(heads)
+
+        dataloader = FastTensorDataLoader(
+            heads, rels, tails,
+            batch_size=batch_size,
+            shuffle=(mode=="train")
+        )
+
         return dataloader
     
     def train(self):
@@ -417,6 +441,8 @@ class GraphModel():
     def compute_ranking_metrics(self, mode="test_subsumption"):
         if "test" in mode:
             self.load_best_model()
+
+        # Set head/tail IDs according to the evaluation mode
         if "subsumption" in mode:
             all_tail_ids = self.classes_ids.to(self.device)
             all_head_ids = self.classes_ids.to(self.device)
@@ -449,8 +475,6 @@ class GraphModel():
                     head = th.where(all_head_ids == graph_head)[0]
                     tail = th.where(all_tail_ids == graph_tail)[0]
                     
-                    logger.debug(f"graph_tail: {graph_tail}")
-                    
                     preds = predictions[i]
 
                     orderings = th.argsort(preds, descending=True)
@@ -461,30 +485,29 @@ class GraphModel():
                         ranks[rank] = 0
                     ranks[rank] += 1
 
-                    mean_rank /= dataloader.dataset_len
                     if "test" in mode:
-                        mrr += 1/(rank+1)
-                    
-                        if rank < 1:
+                        mrr += 1 / (rank + 1)
+                        if rank <= 1:
                             hits_at_1 += 1
-                        if rank < 5:
+                        if rank <= 5:
                             hits_at_5 += 1
-                        if rank < 10:
+                        if rank <= 10:
                             hits_at_10 += 1
 
-            if "test" in mode:
-                mrr /= dataloader.dataset_len
-                hits_at_1 /= dataloader.dataset_len
-                hits_at_5 /= dataloader.dataset_len
-                hits_at_10 /= dataloader.dataset_len
-                
-                raw_metrics = (mrr, hits_at_1, hits_at_5, hits_at_10)
-                logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
+        # Divide by total number of triples **after** looping
+        mean_rank /= dataloader.dataset_len
         if "test" in mode:
+            mrr /= dataloader.dataset_len
+            hits_at_1 /= dataloader.dataset_len
+            hits_at_5 /= dataloader.dataset_len
+            hits_at_10 /= dataloader.dataset_len
+            
+            raw_metrics = (mrr, hits_at_1, hits_at_5, hits_at_10)
+            logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
             return raw_metrics 
         else:
             return mean_rank
-                                                                            
+                                                     
     def normal_forward(self, head_idxs, rel_idxs, tail_idxs, len_tail_idxs):
         logits = self.model.predict((head_idxs, rel_idxs, tail_idxs))
         logger.debug(f"logits shape before reshape: {logits.shape}")
@@ -523,10 +546,10 @@ class GraphModel():
         g_test.parse(self.test_path)
         possible_predicates = get_possible_predicates(g_test)
         
-        out_class_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_class_embeddings.pkl"
-        out_individual_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_individual_embeddings.pkl"
-        out_role_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_role_embeddings.pkl"
-        out_triples_factory_file = f"datasets/bin/owl2vec/{self.dataset_name}/{self.file_name}_triples_factory.pkl"
+        out_class_file = f"models/owl2vec/{self.dataset_name}/{self.file_name}_class_embeddings.pkl"
+        out_individual_file = f"models/owl2vec/{self.dataset_name}/{self.file_name}_individual_embeddings.pkl"
+        out_role_file = f"models/owl2vec/{self.dataset_name}/{self.file_name}_role_embeddings.pkl"
+        out_triples_factory_file = f"models/owl2vec/{self.dataset_name}/{self.file_name}_triples_factory.pkl"
         
         cls_ids = [self.node_to_id[n] for n in self.classes]
         ind_ids = [self.node_to_id[n] for n in self.individuals]

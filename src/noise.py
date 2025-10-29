@@ -114,7 +114,7 @@ def add_triples_random(g_no_noise, noise_percentage):
 def train_gnn(g, nodes, device, relations, epochs=100):
     data = get_data(g)[0]
     data = split_edges(data)
-    model = GNN(device, len(nodes), len(relations))    
+    model = GNN(42, device, len(nodes), len(relations))    
     for _ in range(epochs+1):
         loss = model._train(data.to(device))
     return model, data
@@ -129,7 +129,7 @@ def add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, 
         edge_index = torch.tensor([data.edge_index[0, mask].tolist(), data.edge_index[1, mask].tolist()])
         edge_type = data.edge_type[mask]
 
-        output = model.model.encode(edge_index.to(device), edge_type.to(device))
+        output = model.encode(data.to(device))
         scores = torch.matmul(output, output.T)
         output_norm = torch.norm(output, dim=1, keepdim=True)
         scores_norm = scores / (output_norm * output_norm.T)

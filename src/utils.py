@@ -235,6 +235,61 @@ def get_experiments(dataset_name):
                         'file_name' : 'OWL2DL-1_logical_1.0',
                         'format_' : None,
                         'add_noise': True}]
+        
+    elif dataset_name == 'pizza':
+    
+        experiments = [{'dataset_name' : 'pizza',
+                        'file_name' : 'pizza',
+                        'format_' : None,
+                        'add_noise': False},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_gnn_0.25',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_random_0.25',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_logical_0.25',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_gnn_0.5',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_random_0.5',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_logical_0.5',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_gnn_0.75',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_random_0.75',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_logical_0.75',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_gnn_1.0',
+                        'format_' : None,
+                        'add_noise': True},                 
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_random_1.0',
+                        'format_' : None,
+                        'add_noise': True},
+                       {'dataset_name' : 'pizza',
+                        'file_name' : 'pizza_logical_1.0',
+                        'format_' : None,
+                        'add_noise': True}]
 
     return experiments
 
@@ -265,5 +320,7 @@ def get_namespace(dataset_name: str):
         return Namespace("http://www.example.com/genealogy.owl#")
     elif dataset_name.startswith('OWL2DL-'):
         return Namespace("https://kracr.iiitd.edu.in/OWL2Bench#")
+    elif dataset_name == 'pizza':
+        return Namespace("http://www.co-ode.org/ontologies/pizza/pizza.owl#")
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
