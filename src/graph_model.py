@@ -81,9 +81,9 @@ class GraphModel():
                 
         self.projector = OWL2VecStarProjector(bidirectional_taxonomy=True)
         
-        self.train_path = f'datasets/{self.file_name}_train.owl' # we add noise to training set 
+        self.train_path = f'datasets/{self.dataset_name}_train.owl' 
         self.valid_path = f'datasets/{self.dataset_name}_val.owl'
-        self.test_path = f'datasets/{self.dataset_name}_test.owl'
+        self.test_path = f'datasets/{self.file_name}_test.owl' # we add noise to test set 
 
         self._train_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_train.edgelist'
         self._valid_subsumption_graph_path = f'models/owl2vec/{self.dataset_name}/{self.file_name}_val_subsumption.edgelist'

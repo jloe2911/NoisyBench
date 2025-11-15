@@ -84,31 +84,35 @@ def find_instances(graph, class_uri):
     return {s for s, _, o in graph.triples((None, rdflib.RDF.type, class_uri))}
 
 def add_triples_random(g_no_noise, noise_percentage):
-    max_triples = int(noise_percentage * len(g_no_noise)) 
+    max_triples = int(noise_percentage * len(g_no_noise))
 
-    noisy_g_random = rdflib.Graph()
-    new_g_random = copy_graph(g_no_noise)
-    num_triples = 0
+    # Graphs
+    noisy_g_random = rdflib.Graph()           # holds only corrupted triples
+    new_g_random = copy_graph(g_no_noise)     # copy of the new graph
 
     subjects = list(set(g_no_noise.subjects()))
     objects = list(set(g_no_noise.objects()))
     triples_list = list(g_no_noise)
 
-    while num_triples < max_triples:
-        triple = random.choice(triples_list)
+    # Select triples to corrupt 
+    triples_to_corrupt = random.sample(triples_list, max_triples)
+
+    for triple in triples_to_corrupt:
         s, p, o = triple
 
-        if random.choice([True, False]):  
+        choice = random.choice(['s', 'o'])
+        if choice == 's':
             new_s = random.choice(subjects)
             corrupted_triple = (new_s, p, o)
-        else:  
+        else:
             new_o = random.choice(objects)
             corrupted_triple = (s, p, new_o)
 
-        if corrupted_triple not in g_no_noise:
-            noisy_g_random.add(corrupted_triple)
+        # Make sure corruption actually changes the triple and isn't already in the graph
+        if corrupted_triple != triple and corrupted_triple not in g_no_noise:
             new_g_random.add(corrupted_triple)
-            num_triples += 1
+            noisy_g_random.add(corrupted_triple)
+
     return noisy_g_random, new_g_random
 
 def train_gnn(g, nodes, device, relations, epochs=100):
@@ -119,24 +123,30 @@ def train_gnn(g, nodes, device, relations, epochs=100):
         loss = model._train(data.to(device))
     return model, data
 
-def add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage):
-    max_triples = int((noise_percentage * len(g)) / len(relations_dict_rev))
-    noisy_g = rdflib.Graph()
-    new_g = copy_graph(g)
+def add_triples_gnn(model, g_no_noise, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage):
+    max_triples = int((noise_percentage * len(g_no_noise)) / len(relations_dict_rev))
+    
+    # Graphs
+    noisy_g_gnn = rdflib.Graph()           # holds only corrupted triples
+    new_g_gnn = copy_graph(g_no_noise)     # copy of the new graph
+    
+    # Encode once
+    output = model.encode(data.to(device))
+    scores = torch.matmul(output, output.T)
+    output_norm = torch.norm(output, dim=1, keepdim=True)
+    scores_norm = scores / (output_norm * output_norm.T)
     
     for key in relations_dict_rev:
         mask = data.edge_type == key
         edge_index = torch.tensor([data.edge_index[0, mask].tolist(), data.edge_index[1, mask].tolist()])
-        edge_type = data.edge_type[mask]
 
-        output = model.encode(data.to(device))
-        scores = torch.matmul(output, output.T)
-        output_norm = torch.norm(output, dim=1, keepdim=True)
-        scores_norm = scores / (output_norm * output_norm.T)
+        # Set scores of existing edges of this relation to 1 to exclude
         scores_norm[edge_index[0, :], edge_index[1, :]] = 1
 
         _, topk_indices = torch.topk(scores_norm.flatten(), max_triples * 2, largest=False)
         row_idx, col_idx = topk_indices // scores_norm.size(1), topk_indices % scores_norm.size(1)
+
+        # For directed graphs, you may want to keep all pairs
         valid_mask = row_idx < col_idx
         row_idx, col_idx = row_idx[valid_mask], col_idx[valid_mask]
 
@@ -144,15 +154,13 @@ def add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, 
             s = nodes_dict_rev[r.item()]
             o = nodes_dict_rev[c.item()]
             p = relations_dict_rev[key]
-            existing_triples = list(g.triples((None, URIRef(p), None)))
-            if existing_triples:
-                triple = random.choice(existing_triples)
-                corrupted = (s, triple[1], triple[2]) if random.choice([True, False]) else (triple[0], triple[1], o)
-                if corrupted not in g:
-                    noisy_g.add(corrupted)
-                    new_g.add(corrupted)
-    
-    return noisy_g, new_g
+            corrupted_triple = (s, rdflib.URIRef(p), o)  # Directly create a triple from the candidate pair
+
+            if corrupted_triple not in g_no_noise:
+                noisy_g_gnn.add(corrupted_triple)
+                new_g_gnn.add(corrupted_triple)
+
+    return noisy_g_gnn, new_g_gnn
 
 def build_class_index(graph):
     class_to_instances = defaultdict(set)
@@ -166,47 +174,149 @@ def build_object_class_map(graph):
         obj_classes[s].add(o)
     return obj_classes
 
-def add_triples_logical(graph, noise_percentage, disjoint_classes, disjoint_properties):
-    graph = remove_triples(graph)
-    max_triples = int(noise_percentage * len(graph))
+def add_triples_logical(g_no_noise, noise_percentage, disjoint_classes, disjoint_properties):
+    max_triples = int(noise_percentage * len(g_no_noise))
 
-    noisy_graph = rdflib.Graph()
-    new_graph = copy_graph(graph)
+    # Clean graph
+    g_no_noise = remove_triples(g_no_noise)
+    
+    # Graphs
+    noisy_g_logical = rdflib.Graph()           # holds only corrupted triples
+    new_g_logical = copy_graph(g_no_noise)     # copy of the new graph
 
-    triples_list = list(graph)
-    all_classes = set(graph.objects(None, rdflib.RDF.type))
+    triples_list = list(g_no_noise)
+    all_classes = set(g_no_noise.objects(None, rdflib.RDF.type))
 
     # Precompute
-    class_to_instances = build_class_index(graph)
-    obj_classes = build_object_class_map(graph)
+    class_to_instances = build_class_index(g_no_noise)
+    obj_classes = build_object_class_map(g_no_noise)
     alt_classes = {c: list(all_classes - {c}) for c in all_classes}
 
-    num_triples = 0
-    attempts = 0
-    while num_triples < max_triples and attempts < max_triples * 50:  
-        attempts += 1
-        s, p, o = random.choice(triples_list)
-        corrupted = None
+    # Namespace for fake individuals
+    EX = Namespace("http://example.org/fake/")
 
+    # -------------------------------------------------------
+    # STEP 1 — Build all logically valid corruptions
+    # -------------------------------------------------------
+    logical_candidates = set()
+
+    for s, p, o in triples_list:
+
+        # --- TYPE corruption ---
         if p == rdflib.RDF.type:
             if o in disjoint_classes:
-                corrupted = (s, p, random.choice(disjoint_classes[o]))
+                for dc in disjoint_classes[o]:
+                    logical_candidates.add((s, p, dc))
             else:
-                corrupted = (s, p, random.choice(alt_classes[o]))
+                for alt in alt_classes[o]:
+                    logical_candidates.add((s, p, alt))
+
+        # --- PROPERTY corruption ---
         elif p in disjoint_properties:
-            corrupted = (s, random.choice(disjoint_properties[p]), o)
+            for dp in disjoint_properties[p]:
+                logical_candidates.add((s, dp, o))
+
+        # --- OBJECT corruption ---
         else:
             for c in obj_classes.get(o, []):
                 if c in disjoint_classes:
-                    new_c = random.choice(disjoint_classes[c])
-                    candidates = class_to_instances.get(new_c, [])
-                    if candidates:
-                        corrupted = (s, p, random.choice(list(candidates)))
+                    for new_c in disjoint_classes[c]:
+                        for inst in class_to_instances.get(new_c, []):
+                            logical_candidates.add((s, p, inst))
+
+    # Remove triples already in graph
+    logical_candidates = [t for t in logical_candidates if t not in g_no_noise]
+
+    # Shuffle for randomness
+    random.shuffle(logical_candidates)
+
+    # How many do we have?
+    num_logical = len(logical_candidates)
+
+    # -------------------------------------------------------
+    # STEP 2 — Use as many logical corruptions as possible
+    # -------------------------------------------------------
+    selected = []
+
+    if num_logical >= max_triples:
+        selected = logical_candidates[:max_triples]
+
+    else:
+        # Use all available logical ones
+        selected = list(logical_candidates)
+
+        # ---------------------------------------------------
+        # STEP 3 — Generate fake individuals for the rest
+        # ---------------------------------------------------
+        needed = max_triples - num_logical
+        fake_count_1 = 0
+        fake_count_2 = 1
+
+        while needed > 0:
+
+            if random.choice([True, False]) and len(disjoint_classes) > 0:
+                # ----------------------------------
+                # Fake individuals + disjoint class
+                # ----------------------------------
+                dc = random.choice(list(disjoint_classes.keys()))
+                class_list = disjoint_classes[dc]
+                if not class_list:
+                    continue
+                chosen_dc = random.choice(class_list)
+
+                fake_ind_1 = EX[f"Fake{fake_count_1}"]
+                fake_ind_2 = EX[f"Fake{fake_count_2}"]
+                fake_count_1 += 2
+                fake_count_2 += 2
+
+                corrupted_1 = (fake_ind_1, rdflib.RDF.type, chosen_dc)
+                corrupted_2 = (fake_ind_2, rdflib.RDF.type, chosen_dc)
+
+                # Add if unique
+                if corrupted_1 not in selected and corrupted_1 not in g_no_noise:
+                    selected.append(corrupted_1)
+                    needed -= 1
+                    if needed == 0:
                         break
 
-        if corrupted and corrupted not in graph and corrupted not in noisy_graph:
-            noisy_graph.add(corrupted)
-            new_graph.add(corrupted)
-            num_triples += 1
+                if corrupted_2 not in selected and corrupted_2 not in g_no_noise:
+                    selected.append(corrupted_2)
+                    needed -= 1
+                    if needed == 0:
+                        break
 
-    return noisy_graph, new_graph
+            else:
+                # ----------------------------------
+                # Fake individuals + disjoint property
+                # ----------------------------------
+                if len(disjoint_properties) == 0:
+                    continue
+
+                # Pick a random property group
+                base_prop = random.choice(list(disjoint_properties.keys()))
+                prop_list = disjoint_properties[base_prop]
+                if not prop_list:
+                    continue
+
+                chosen_prop = random.choice(prop_list)
+
+                fake_ind_1 = EX[f"Fake{fake_count_1}"]
+                fake_ind_2 = EX[f"Fake{fake_count_2}"]
+                fake_count_1 += 2
+                fake_count_2 += 2
+
+                # Build corrupted triple: fake1 -prop-> fake2
+                corrupted = (fake_ind_1, chosen_prop, fake_ind_2)
+
+                if corrupted not in selected and corrupted not in g_no_noise:
+                    selected.append(corrupted)
+                    needed -= 1
+
+    # -------------------------------------------------------
+    # STEP 4 — Add selected corruptions to output graphs
+    # -------------------------------------------------------
+    for t in selected:
+        noisy_g_logical.add(t)
+        new_g_logical.add(t)
+
+    return noisy_g_logical, new_g_logical

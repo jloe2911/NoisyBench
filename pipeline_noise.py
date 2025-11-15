@@ -28,7 +28,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     dataset_name = args.dataset_name
-    experiments = get_experiments(dataset_name)
 
     # normalize steps
     steps = args.steps
@@ -65,4 +64,5 @@ if __name__ == "__main__":
 
     # Step 5: Create Noise
     if "noise" in steps:
+        experiments = get_experiments(dataset_name)
         add_noise_to_dataset(dataset_name, experiments)

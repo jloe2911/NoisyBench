@@ -14,7 +14,7 @@ device = 'cpu'  # Override for consistency
 
 def load_graphs(dataset_name: str):
     g = rdflib.Graph()
-    g.parse(f'datasets/{dataset_name}_train.owl', format='xml')
+    g.parse(f'datasets/{dataset_name}_test.owl', format='xml')
 
     g_modified = rdflib.Graph()
     g_modified.parse(f'ontologies/{dataset_name}_modified.owl', format='turtle')  # modified TBOX
@@ -105,40 +105,37 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
 
     os.makedirs("datasets/noise", exist_ok=True)
 
-    for noise_percentage in [0.25, 0.5, 0.75, 1.0]:
+    for noise_percentage in [0.25, 0.5, 0.75, 1]:
         # Random
-        noisy_r, _ = add_triples_random(g, noise_percentage)
+        g, g_modified = load_graphs(dataset_name)
+        noisy_r, new_noisy_r = add_triples_random(g, noise_percentage)
         noisy_r = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_r))
         noisy_r = sanitize_ontology(noisy_r) 
         noisy_r.serialize(f"datasets/noise/{dataset_name}_random_{noise_percentage}.owl", format='xml')
+        new_noisy_r = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_r))
+        new_noisy_r = sanitize_ontology(new_noisy_r) 
+        new_noisy_r.serialize(f"datasets/{dataset_name}_random_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Random Noise - {noise_percentage}")
 
         # GNN
+        g, g_modified = load_graphs(dataset_name)
         model = torch.load(f'models/RGCN_{dataset_name}', weights_only=False)
-        noisy_g, _ = add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage)
+        noisy_g, new_noisy_g = add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage)
         noisy_g = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_g))
         noisy_g = sanitize_ontology(noisy_g) 
         noisy_g.serialize(f"datasets/noise/{dataset_name}_gnn_{noise_percentage}.owl", format='xml')
+        new_noisy_g = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_g))
+        new_noisy_g = sanitize_ontology(new_noisy_g) 
+        new_noisy_g.serialize(f"datasets/{dataset_name}_gnn_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Statistical Noise - {noise_percentage}")
 
         # Logical
-        noisy_dl, _ = add_triples_logical(g, noise_percentage, all_disjoint_classes, all_disjoint_properties)
+        g, g_modified = load_graphs(dataset_name)
+        noisy_dl, new_noisy_dl = add_triples_logical(g, noise_percentage, all_disjoint_classes, all_disjoint_properties)
         noisy_dl = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_dl))
         noisy_dl = sanitize_ontology(noisy_dl) 
         noisy_dl.serialize(f"datasets/noise/{dataset_name}_logical_{noise_percentage}.owl", format='xml')
+        new_noisy_dl = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_dl))
+        new_noisy_dl = sanitize_ontology(new_noisy_dl) 
+        new_noisy_dl.serialize(f"datasets/{dataset_name}_logical_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Logical Noise - {noise_percentage}")
-
-    # Create training datasets + noise
-    for experiment in experiments[1:]: 
-        
-        dataset_name = experiment['dataset_name']
-        file_name = experiment['file_name']
-
-        g_train = rdflib.Graph()
-        g_train.parse(f'datasets/{dataset_name}_train.owl', format='xml')
-
-        g_noise = rdflib.Graph()
-        g_noise.parse(f'datasets/noise/{file_name}.owl', format='xml')
-
-        g_train += g_noise
-        g_train.serialize(destination=f'datasets/{file_name}_train.owl', format="xml")

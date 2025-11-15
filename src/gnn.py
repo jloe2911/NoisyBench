@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn import Parameter
 from torch_geometric.nn import RGCNConv
-from torch_geometric.utils import negative_sampling
+from torch_geometric.utils import negative_sampling, to_undirected
 from torch_geometric.data import HeteroData
 
 import rdflib
@@ -130,21 +130,19 @@ class GNN(torch.nn.Module):
         torch.nn.utils.clip_grad_norm_(self.parameters(), 1.0)
         self.optimizer.step()
         return float(loss)
-
+    
     def _eval(self, data, target_type, multiple):
         self.eval()
         with torch.no_grad():
             new_data = get_specific_test_edge_type(data, target_type, multiple)
-            z = self.encoder(new_data.test_pos_edge_index, new_data.test_edge_type)
-            mrr, hits1, hits5, hits10 = eval_hits_vectorized_typed(
+            z = self.encoder(data.train_pos_edge_index, data.train_edge_type)
+            mrr, hits1, hits5, hits10 = eval_hits_full_ranking(
                 edge_index=new_data.test_pos_edge_index,
                 edge_type=new_data.test_edge_type,
                 z=z,
                 rel_emb=self.decoder.rel_emb,
                 rdf_type_id=self.rdf_type_id,
                 class_nodes=self.class_nodes,
-                tail_pred=1,
-                max_num=100,
                 device=self.device
             )
         return mrr, hits1, hits5, hits10
@@ -155,42 +153,53 @@ class GNN(torch.nn.Module):
 ###########################################
 
 @torch.no_grad()
-def eval_hits_vectorized_typed(edge_index, edge_type, z, rel_emb,
-                               rdf_type_id=None, class_nodes=None,
-                               tail_pred=1, max_num=100, device='cpu'):
+def eval_hits_full_ranking(edge_index, edge_type, z, rel_emb,
+                          rdf_type_id=None, class_nodes=None,
+                          device='cpu'):
     num_edges = edge_index.size(1)
     num_nodes = z.size(0)
     if num_edges == 0:
-        logging.warning("eval_hits_vectorized: got 0 test edges — returning NaNs.")
+        logging.warning("got 0 test edges — returning NaNs.")
         return float('nan'), float('nan'), float('nan'), float('nan')
 
     src, dst = edge_index
     rel = rel_emb[edge_type]
     pos_src, pos_dst = z[src], z[dst]
-    pos_scores = torch.sum(pos_src * rel * pos_dst, dim=1, keepdim=True)
+    pos_scores = torch.sum(pos_src * rel * pos_dst, dim=1)
 
-    # --- relation-aware negative sampling for eval ---
-    neg_scores_all = []
+    ranks = []
     for i in range(num_edges):
         r = edge_type[i].item()
-        s = src[i]
+        s = src[i].item()
+        o = dst[i].item()
+
+        # Get all candidate tail nodes for ranking
         if rdf_type_id is not None and r == rdf_type_id and class_nodes is not None:
-            neg_nodes = class_nodes[torch.randint(0, len(class_nodes), (max_num,), device=device)]
+            candidates = class_nodes
         else:
-            neg_nodes = torch.randint(0, num_nodes, (max_num,), device=device)
+            candidates = torch.arange(num_nodes, device=device)
 
-        neg_embeds = z[neg_nodes]
-        rel_i = rel_emb[r].unsqueeze(0)
-        src_i = z[s].unsqueeze(0)
-        neg_scores = torch.sum(src_i * rel_i * neg_embeds, dim=1)
-        neg_scores_all.append(neg_scores.unsqueeze(0))
+        # Filter out the true tail node from candidates
+        candidates = candidates[candidates != o]
 
-    neg_scores = torch.cat(neg_scores_all, dim=0)
-    ranks = (neg_scores > pos_scores).sum(dim=1) + 1
-    mrr = (1.0 / ranks.float()).mean().item()
+        # Embeddings
+        z_s = z[s].unsqueeze(0)  # shape: [1, hidden_dim]
+        rel_r = rel_emb[r].unsqueeze(0)  # shape: [1, hidden_dim]
+        z_candidates = z[candidates]  # shape: [num_candidates, hidden_dim]
+
+        # Compute scores for negatives
+        neg_scores = torch.sum(z_s * rel_r * z_candidates, dim=1)  # [num_candidates]
+
+        # Compare positive score with negatives
+        rank = (neg_scores >= pos_scores[i]).sum().item() + 1  # rank starts at 1
+        ranks.append(rank)
+
+    ranks = torch.tensor(ranks, dtype=torch.float, device=device)
+    mrr = (1.0 / ranks).mean().item()
     hits1 = (ranks <= 1).float().mean().item()
     hits5 = (ranks <= 5).float().mean().item()
     hits10 = (ranks <= 10).float().mean().item()
+
     return mrr, hits1, hits5, hits10
 
 
@@ -282,7 +291,7 @@ def train_gnn_reasoner(dataset_name, file_name, device, seed, iteration=0, epoch
     g_train = rdflib.Graph()
     g_train.parse(f"datasets/{dataset_name}_train.owl")
     g_test = rdflib.Graph()
-    g_test.parse(f"datasets/{dataset_name}_test.owl")
+    g_test.parse(f"datasets/{file_name}_test.owl") # We add noise to the test set
     _, _, _, _, relations_dict_test = get_data(g_test)
     g_val = rdflib.Graph()
     g_val.parse(f"datasets/{dataset_name}_val.owl")
