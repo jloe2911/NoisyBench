@@ -115,12 +115,13 @@ def add_triples_random(g_no_noise, noise_percentage):
 
     return noisy_g_random, new_g_random
 
-def train_gnn(g, nodes, device, relations, epochs=100):
+def train_gnn(g, nodes, device, relations, seed=42, epochs=500):
     data = get_data(g)[0]
-    data = split_edges(data)
-    model = GNN(42, device, len(nodes), len(relations))    
-    for _ in range(epochs+1):
-        loss = model._train(data.to(device))
+    data = split_edges(data, test_ratio=0.2, val_ratio=0.1, seed=seed)
+    model = GNN(device, len(nodes), len(relations))
+    for epoch in range(epochs + 1):
+        epoch_seed = seed + epoch
+        loss = model._train(data.to(device), epoch_seed=epoch_seed)
     return model, data
 
 def add_triples_gnn(model, g_no_noise, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage):

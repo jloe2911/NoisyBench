@@ -318,7 +318,7 @@ def run_box2el(device, experiments):
             val_manager = OWLManager.createOWLOntologyManager()
 
             train_ontology = train_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_train.owl')) 
-            test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_test.owl')) # we add noise to train
+            test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_test.owl')) # we add noise to test
             val_ontology = val_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_val.owl'))
     
             train_ont = preprocess_ontology_el(train_ontology)

@@ -2,6 +2,7 @@ import os
 import torch
 import rdflib
 from rdflib import Namespace, RDF, RDFS, OWL, BNode, URIRef, Literal
+from rdflib.collection import Collection
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -68,6 +69,49 @@ def fix_blank_nodes_for_rdfxml(g: rdflib.Graph) -> rdflib.Graph:
 
     return g
 
+def fix_malformed_disjoint_classes(g):
+    to_remove = []
+
+    # AllDisjointClasses form
+    for s in g.subjects(RDF.type, OWL.AllDisjointClasses):
+        for members in g.objects(s, OWL.members):
+            try:
+                items = list(Collection(g, members))
+            except:
+                continue  # malformed list, skip
+
+            if len(items) < 2:
+                # mark entire axiom for removal
+                to_remove.append(s)
+
+    # Remove malformed AllDisjointClasses axioms
+    for ax in to_remove:
+        g.remove((ax, None, None))
+        g.remove((None, None, ax))
+
+    return g
+
+def fix_disjoint_axioms(g):
+    # Fix AllDisjointClasses lists
+    g = fix_malformed_disjoint_classes(g)
+
+    # Fix DisjointClasses represented as rdf:List
+    for s, p, o in g.triples((None, OWL.disjointWith, None)):
+        # disjointWith should point to IRIs or blank nodes, not lists
+        # but your noisy generator may produce garbage
+        if (o, RDF.first, None) in g:
+            # list root detected
+            items = []
+            try:
+                items = list(Collection(g, o))
+            except:
+                pass
+            if len(items) < 2:
+                # Remove the broken part
+                g.remove((s, OWL.disjointWith, o))
+
+    return g
+
 def sanitize_ontology(graph: rdflib.Graph, base_uri="http://example.com/genid/") -> rdflib.Graph:
     """
     Converts all blank nodes in a graph to synthetic URIs for RDF/XML compatibility.
@@ -110,9 +154,11 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
         g, g_modified = load_graphs(dataset_name)
         noisy_r, new_noisy_r = add_triples_random(g, noise_percentage)
         noisy_r = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_r))
+        noisy_r = fix_malformed_disjoint_classes(noisy_r)
         noisy_r = sanitize_ontology(noisy_r) 
         noisy_r.serialize(f"datasets/noise/{dataset_name}_random_{noise_percentage}.owl", format='xml')
         new_noisy_r = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_r))
+        new_noisy_r = fix_malformed_disjoint_classes(new_noisy_r)
         new_noisy_r = sanitize_ontology(new_noisy_r) 
         new_noisy_r.serialize(f"datasets/{dataset_name}_random_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Random Noise - {noise_percentage}")
@@ -122,9 +168,11 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
         model = torch.load(f'models/RGCN_{dataset_name}', weights_only=False)
         noisy_g, new_noisy_g = add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage)
         noisy_g = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_g))
+        noisy_g = fix_malformed_disjoint_classes(noisy_g)
         noisy_g = sanitize_ontology(noisy_g) 
         noisy_g.serialize(f"datasets/noise/{dataset_name}_gnn_{noise_percentage}.owl", format='xml')
         new_noisy_g = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_g))
+        new_noisy_g = fix_malformed_disjoint_classes(new_noisy_g)
         new_noisy_g = sanitize_ontology(new_noisy_g) 
         new_noisy_g.serialize(f"datasets/{dataset_name}_gnn_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Statistical Noise - {noise_percentage}")
@@ -133,9 +181,11 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
         g, g_modified = load_graphs(dataset_name)
         noisy_dl, new_noisy_dl = add_triples_logical(g, noise_percentage, all_disjoint_classes, all_disjoint_properties)
         noisy_dl = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_dl))
+        noisy_dl = fix_malformed_disjoint_classes(noisy_dl)
         noisy_dl = sanitize_ontology(noisy_dl) 
         noisy_dl.serialize(f"datasets/noise/{dataset_name}_logical_{noise_percentage}.owl", format='xml')
         new_noisy_dl = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(new_noisy_dl))
+        new_noisy_dl = fix_malformed_disjoint_classes(new_noisy_dl)
         new_noisy_dl = sanitize_ontology(new_noisy_dl) 
         new_noisy_dl.serialize(f"datasets/{dataset_name}_logical_{noise_percentage}_test.owl", format='xml')
         logging.info(f"DONE - Logical Noise - {noise_percentage}")
