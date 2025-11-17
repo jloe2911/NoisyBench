@@ -4,6 +4,8 @@
 
 **NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2Bench**, **Family** and **Pizza**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL**, **OWL2Vec** and **RGCN**). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
 
+Using the **Pizza ontology**, we created an ABox generator to support experiments with synthetic data (`see ontologies/Abox-generation.ipynb`). The process for generating ABox data for the Pizza ontology begins by loading the Pizza TBox (Terminological Box) axioms. A custom instance generation step then programmatically creates a specified number of individuals (ABox data), and their object properties based on a configuration. For this study, we use only NamedPizza class and hasTopping property in the configuration. Crucially, this generation leverages the TBox's inherent OWL restrictions (e.g., `only` or`some` constraints) to dynamically determine the appropriate target classes for object properties, thereby guaranteeing the generated ABox is semantically consistent with the ontology's definition. The final output is the complete ontology, comprising the original TBox and the newly populated ABox.
+
 ---
 
 ## Features
@@ -100,14 +102,16 @@ mowl.init_jvm(JVM_MEMORY)
 
 ```bash
 python pipeline_noise.py --dataset_name family
-python pipeline_noise.py --dataset_name pizza
+python pipeline_noise.py --dataset_name pizza_100
+python pipeline_noise.py --dataset_name pizza_1000
 python pipeline_noise.py --dataset_name OWL2DL-1
 ```
 
 The pipeline uses ontologies stored in the `ontology` folder:
 
 - `family.owl`
-- `pizza.owl`
+- `pizza_100.owl`
+- `pizza_1000.owl`
 - `OWL2Bench.owl`
 
 For each ontology, two additional versions are provided:
@@ -169,9 +173,12 @@ python pipeline_noise.py --dataset_name OWL2DL-1 --steps split
 python pipeline_reasoner.py --dataset_name family --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name family --reasoner box2el
 python pipeline_reasoner.py --dataset_name family --reasoner rgcn
-python pipeline_reasoner.py --dataset_name pizza --reasoner owl2vec
-python pipeline_reasoner.py --dataset_name pizza --reasoner box2el
-python pipeline_reasoner.py --dataset_name pizza --reasoner rgcn
+python pipeline_reasoner.py --dataset_name pizza_100 --reasoner owl2vec
+python pipeline_reasoner.py --dataset_name pizza_100 --reasoner box2el
+python pipeline_reasoner.py --dataset_name pizza_100 --reasoner rgcn
+python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner owl2vec
+python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner box2el
+python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner rgcn
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner box2el
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner rgcn
