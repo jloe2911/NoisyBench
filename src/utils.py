@@ -94,35 +94,54 @@ def add_links(g, node1_lst, node2_lst, edge_type_uri):
         g.add((node1, edge_type_uri, node2))
     return g
 
-def preprocess_ontology_el(ontology):
-    tbox_axioms = ontology.getTBoxAxioms(Imports.fromBoolean(True))
-    abox_axioms = ontology.getABoxAxioms(Imports.fromBoolean(True))
-    new_tbox_axioms = HashSet() 
-    for axiom in tbox_axioms:
-        axiom_as_str = axiom.toString()
-        if "ObjectHasValue" in axiom_as_str:
-            continue
-        elif "DataSomeValuesFrom" in axiom_as_str:
-            continue
-        elif "DataAllValuesFrom" in axiom_as_str:
-            continue
-        elif "DataHasValue" in axiom_as_str:
-            continue
-        elif "DataPropertyRange" in axiom_as_str:
-            continue
-        elif "DataPropertyDomain" in axiom_as_str:
-            continue
-        elif "FunctionalDataProperty" in axiom_as_str:
-            continue
-        elif "DisjointUnion" in axiom_as_str:
-            continue
-        elif "HasKey" in axiom_as_str:
-            continue
-        new_tbox_axioms.add(axiom)
-    owl_manager = OWLAPIAdapter().owl_manager
-    new_ontology = owl_manager.createOntology(new_tbox_axioms)
-    new_ontology.addAxioms(abox_axioms)
-    return new_ontology
+def preprocess(ontology, namespace_prefix):
+    from org.semanticweb.owlapi.model import AxiomType, IRI
+    from java.util import HashSet
+
+    """
+    Convert annotation assertions with properties starting with namespace_prefix into object property assertions.
+    Modifies ontology in place and returns it.
+
+    :param ontology: OWLOntology instance
+    :param namespace_prefix: string, e.g. "http://www.co-ode.org/ontologies/pizza/pizza.owl#"
+    :return: processed OWLOntology (same instance)
+    """
+    manager = ontology.getOWLOntologyManager()
+    data_factory = manager.getOWLDataFactory()
+
+    axioms_to_add = set()
+    axioms_to_remove = set()
+
+    for ann_axiom in ontology.getAxioms(AxiomType.ANNOTATION_ASSERTION):
+        prop_iri = ann_axiom.getProperty().getIRI().toString()
+        if prop_iri.startsWith(namespace_prefix):
+            subject = ann_axiom.getSubject()
+            value = ann_axiom.getValue()
+
+            if subject.isIRI() and value.isIRI():
+                subj_iri = subject.asIRI().get()  # extract the IRI inside Present
+                subj_indiv = data_factory.getOWLNamedIndividual(subj_iri)
+                val_iri = value.asIRI().get()
+                obj_indiv = data_factory.getOWLNamedIndividual(val_iri)
+                obj_prop = data_factory.getOWLObjectProperty(IRI.create(prop_iri))
+
+                opa_axiom = data_factory.getOWLObjectPropertyAssertionAxiom(obj_prop, subj_indiv, obj_indiv)
+
+                axioms_to_add.add(opa_axiom)
+                axioms_to_remove.add(ann_axiom)
+
+    # Convert Python sets to Java HashSets
+    java_axioms_to_remove = HashSet()
+    for ax in axioms_to_remove:
+        java_axioms_to_remove.add(ax)
+    manager.removeAxioms(ontology, java_axioms_to_remove)
+
+    java_axioms_to_add = HashSet()
+    for ax in axioms_to_add:
+        java_axioms_to_add.add(ax)
+    manager.addAxioms(ontology, java_axioms_to_add)
+
+    return ontology
 
 def get_experiments(dataset_name):
     
@@ -181,58 +200,58 @@ def get_experiments(dataset_name):
                         'format_' : None,
                         'add_noise': True}]
         
-    elif dataset_name == 'OWL2DL-1':
+    elif dataset_name == 'OWL2DL-1_100':
     
-        experiments = [{'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1',
+        experiments = [{'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100',
                         'format_' : None,
                         'add_noise': False},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_gnn_0.25',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_gnn_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_random_0.25',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_random_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_logical_0.25',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_logical_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_gnn_0.5',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_gnn_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_random_0.5',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_random_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_logical_0.5',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_logical_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_gnn_0.75',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_gnn_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_random_0.75',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_random_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_logical_0.75',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_logical_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_gnn_1',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_gnn_1',
                         'format_' : None,
                         'add_noise': True},                 
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_random_1',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_random_1',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'OWL2DL-1',
-                        'file_name' : 'OWL2DL-1_logical_1',
+                       {'dataset_name' : 'OWL2DL-1_100',
+                        'file_name' : 'OWL2DL-1_100_logical_1',
                         'format_' : None,
                         'add_noise': True}]
         
@@ -346,58 +365,58 @@ def get_experiments(dataset_name):
                         'format_' : None,
                         'add_noise': True}]
         
-    elif dataset_name == 'pizza_1000':
+    elif dataset_name == 'pizza_250':
     
-        experiments = [{'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000',
+        experiments = [{'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250',
                         'format_' : None,
                         'add_noise': False},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_gnn_0.25',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_gnn_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_random_0.25',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_random_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_logical_0.25',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_logical_0.25',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_gnn_0.5',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_gnn_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_random_0.5',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_random_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_logical_0.5',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_logical_0.5',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_gnn_0.75',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_gnn_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_random_0.75',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_random_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_logical_0.75',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_logical_0.75',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_gnn_1',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_gnn_1',
                         'format_' : None,
                         'add_noise': True},                 
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_random_1',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_random_1',
                         'format_' : None,
                         'add_noise': True},
-                       {'dataset_name' : 'pizza_1000',
-                        'file_name' : 'pizza_1000_logical_1',
+                       {'dataset_name' : 'pizza_250',
+                        'file_name' : 'pizza_250_logical_1',
                         'format_' : None,
                         'add_noise': True}]
 
@@ -429,8 +448,8 @@ def get_namespace(dataset_name: str):
     if dataset_name == 'family':
         return Namespace("http://www.example.com/genealogy.owl#")
     elif dataset_name.startswith('OWL2DL-'):
-        return Namespace("https://kracr.iiitd.edu.in/OWL2Bench#")
-    elif dataset_name == 'pizza':
+        return Namespace("https://kracr.iiitd.edu.in/OWL2DL-1#")
+    elif dataset_name.startswith('pizza'):
         return Namespace("http://www.co-ode.org/ontologies/pizza/pizza.owl#")
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")

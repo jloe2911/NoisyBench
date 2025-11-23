@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-from src.utils import preprocess_ontology_el, save_results
+from src.utils import preprocess, save_results, get_namespace
 
 class ELModule(nn.Module):
     def __init__(self, module_name, dim, nb_classes, nb_individuals, nb_roles):
@@ -299,46 +299,54 @@ class ElModel(EmbeddingELModel):
             logger.info(f'MRR: {mrr:.3f}, Hits@1: {hits_at_1:.3f}, Hits@5: {hits_at_5:.3f}, Hits@10: {hits_at_10:.3f}')
             return (mrr, hits_at_1, hits_at_5, hits_at_10)
 
-def run_box2el(device, experiments):
 
-    os.makedirs(f'models/results/box2el/', exist_ok=True)
+def run_box2el(device, experiments):
+    os.makedirs('models/results/box2el/', exist_ok=True)
 
     for experiment in experiments: 
         dataset_name = experiment['dataset_name']
-        file_name = experiment['file_name']  
+        file_name = experiment['file_name']
+        result_file_path = f'models/results/box2el/{file_name}.txt'
+
+        # Skip if results already exist
+        if os.path.exists(result_file_path):
+            logger.info(f"Skipping {file_name} because results already exist at {result_file_path}")
+            continue
 
         subsumption_results = []
         membership_results = []
         link_prediction_results = []
-        
-        for _ in range(5):                                                                                                     
 
+        for _ in range(5):                                                                                                     
             train_manager = OWLManager.createOWLOntologyManager()
             test_manager = OWLManager.createOWLOntologyManager()
             val_manager = OWLManager.createOWLOntologyManager()
 
             train_ontology = train_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_train.owl')) 
-            test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_test.owl')) # we add noise to test
+            test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_test.owl'))  # we add noise to test
             val_ontology = val_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_val.owl'))
-    
-            train_ont = preprocess_ontology_el(train_ontology)
-            test_ont = preprocess_ontology_el(test_ontology)
-            valid_ont = preprocess_ontology_el(val_ontology)
+
+            NS = get_namespace(dataset_name)
+            train_ont = preprocess(train_ontology, NS)
+            test_ont = preprocess(test_ontology, NS)
+            valid_ont = preprocess(val_ontology, NS)
 
             dataset = Dataset(train_ont, testing=test_ont, validation=valid_ont)
-            
-            model = ElModel(dataset, 
-                            module_name='box2el', 
-                            dim=256, 
-                            margin=0.1, 
-                            batch_size=8192, 
-                            test_batch_size=32, 
-                            epochs=300, 
-                            learning_rate=0.001,
-                            device=device)
-            
+
+            model = ElModel(
+                dataset,
+                module_name='box2el', 
+                dim=256, 
+                margin=0.1, 
+                batch_size=8192, 
+                test_batch_size=32, 
+                epochs=300, 
+                learning_rate=0.001,
+                device=device
+            )
+
             model._train()
-            
+
             logger.info(f'{file_name}:')
             logger.info('Membership:')
             metrics_membership = model._eval('membership')
@@ -351,58 +359,4 @@ def run_box2el(device, experiments):
             membership_results.append(metrics_membership)
             link_prediction_results.append(metrics_link_prediction)
 
-        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/box2el/{file_name}.txt')
-
-def run_box2el_test(device, experiments):
-
-    os.makedirs(f'models/results/box2el/', exist_ok=True)
-
-    for experiment in experiments: 
-        dataset_name = experiment['dataset_name']
-        file_name = experiment['file_name']  
-
-        subsumption_results = []
-        membership_results = []
-        link_prediction_results = []                                                                                         
-
-        train_manager = OWLManager.createOWLOntologyManager()
-        test_manager = OWLManager.createOWLOntologyManager()
-        val_manager = OWLManager.createOWLOntologyManager()
-
-        train_ontology = train_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{file_name}_train.owl')) # we add noise to train
-        test_ontology = test_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_test.owl'))
-        val_ontology = val_manager.loadOntologyFromOntologyDocument(java.io.File(f'datasets/{dataset_name}_val.owl'))
-
-        train_ont = preprocess_ontology_el(train_ontology)
-        test_ont = preprocess_ontology_el(test_ontology)
-        valid_ont = preprocess_ontology_el(val_ontology)
-
-        dataset = Dataset(train_ont, testing=test_ont, validation=valid_ont)
-        
-        model = ElModel(dataset, 
-                        module_name='box2el', 
-                        dim=256, 
-                        margin=0.1, 
-                        batch_size=8192, 
-                        test_batch_size=32, 
-                        epochs=25, 
-                        learning_rate=0.001,
-                        device=device)
-        
-        model._train()
-        
-        logger.info(f'{file_name}:')
-        logger.info('Membership:')
-        metrics_membership = model._eval('membership')
-        logger.info('Subsumption:')
-        metrics_subsumption = model._eval('subsumption')
-        logger.info('Link Prediction:')
-        metrics_link_prediction = model._eval('link_prediction')
-
-        subsumption_results.append(metrics_subsumption)
-        membership_results.append(metrics_membership)
-        link_prediction_results.append(metrics_link_prediction)
-
-        save_results(subsumption_results, membership_results, link_prediction_results, f'models/results/box2el/{file_name}_test.txt')
-
-        break
+        save_results(subsumption_results, membership_results, link_prediction_results, result_file_path)

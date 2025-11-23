@@ -2,9 +2,9 @@
 
 **Benchmarking framework for evaluating neurosymbolic ontology reasoners under noisy conditions.**
 
-**NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2Bench**, **Family** and **Pizza**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL**, **OWL2Vec** and **RGCN**). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
+**NSORN** introduces three types of noise—**logical, random, and statistical**—into the ABox of ontologies to test the robustness of neurosymbolic reasoners. We provide noisy benchmarks for widely used ontologies (e.g., **OWL2DL-1**, **Family** and **Pizza**) and evaluate state-of-the-art neurosymbolic reasoners (e.g., **Box2EL**, **OWL2Vec** and **RGCN**). Our findings show that logical noise is the most challenging, causing significant drops in reasoning performance.
 
-Using the **Pizza ontology**, we created an ABox generator to support experiments with synthetic data (`see ontologies/Abox-generation.ipynb`). The process for generating ABox data for the Pizza ontology begins by loading the Pizza TBox (Terminological Box) axioms. A custom instance generation step then programmatically creates a specified number of individuals (ABox data), and their object properties based on a configuration. For this study, we use only NamedPizza class and hasTopping property in the configuration. Crucially, this generation leverages the TBox's inherent OWL restrictions (e.g., `only` or`some` constraints) to dynamically determine the appropriate target classes for object properties, thereby guaranteeing the generated ABox is semantically consistent with the ontology's definition. The final output is the complete ontology, comprising the original TBox and the newly populated ABox.
+Using the **Pizza ontology**, we created an ABox generator to support experiments with synthetic data (`see ontologies/Abox-generation.ipynb`). The process for generating ABox data for the Pizza ontology begins by loading the Pizza TBox (Terminological Box) axioms. A custom instance generation step then automatically creates a specified number of individuals (ABox data), and their object properties based on a configuration. For this study, we use only `NamedPizza` class and `hasTopping` property in the configuration. Crucially, this generation leverages the TBox's inherent OWL restrictions (e.g.,`only` or `some` constraints) to dynamically determine the appropriate target classes for object properties, thereby guaranteeing the generated ABox is semantically consistent with the ontology's definition. The final output is the complete ontology, comprising the original TBox and the newly populated ABox.
 
 ---
 
@@ -101,46 +101,37 @@ mowl.init_jvm(JVM_MEMORY)
 ### Create Noisy Ontologies
 
 ```bash
-python pipeline_noise.py --dataset_name family
-python pipeline_noise.py --dataset_name pizza_100
-python pipeline_noise.py --dataset_name pizza_1000
-python pipeline_noise.py --dataset_name OWL2DL-1
+python split.py --dataset_name family --tbox family_TBOX
+python pipeline_noise.py --dataset_name family --steps noise
+
+python split.py --dataset_name pizza_100 --tbox pizza_TBOX
+python pipeline_noise.py --dataset_name pizza_100 --steps noise
+
+python split.py --dataset_name pizza_250 --tbox pizza_TBOX
+python pipeline_noise.py --dataset_name pizza_250 --steps noise
+
+python split.py --dataset_name OWL2DL-1 --tbox OWL2DL-1_TBOX
+python pipeline_noise.py --dataset_name OWL2DL-1 --steps noise
 ```
 
 The pipeline uses ontologies stored in the `ontology` folder:
 
 - `family.owl`
 - `pizza_100.owl`
-- `pizza_1000.owl`
-- `OWL2Bench.owl`
+- `pizza_250.owl`
+- `OWL2DL-1.owl`
 
 For each ontology, two additional versions are provided:
 
 - `*_TBOX.owl`: contains only the TBox.
-- `*_modified.owl`: enriched with additional disjoint classes and properties.
+- `*_inferred.owl`: contains the inferred axioms using Pellet (Protege).
 
 **Pipeline Steps:**
 
-1. **Graph Construction per Resource**  
-   - For each resource `r`, construct a small graph `g` containing all triples where `r` appears as subject or object.
-   - Each graph `g`g is expanded to two hops (`g'`) to include all statements within two hops of `r`.
-   - The TBox is added to each graph.
+1. **Build Train, Test and Validation Graphs**
+   - Since our approach is unsupervised, the ontology is added to `G_{train}`, while the inferences are randomly assigned to `G_{train}`, `G_{test}` and `G_{val}`.
 
-   **Outputs:**  
-   - **Input graphs:** 2-hop + TBox  
-   - **Filtered 1-hop graphs:** 1-hop without TBox  
-   - **Filtered input graphs:** 2-hop without TBox  
-
-2. **Run the Reasoner**  
-   - Apply Pellet to the **input graphs** to produce **inferred_graphs**.
-
-3. **Filter Inferences**
-   - To extract only meaningful triples, we focus on membership and property assertion triples, removing any triples where the object is a `Literal` or `owl:Thing`, yielding refined graphs **inferred_graphs_filtered**.
-
-4. **Build Train, Test and Validation Graphs**
-   - Since our approach is unsupervised, the ontology is added to `G_{train}`, while graphs from **inferred_graphs_filtered** are assigned to `G_{test}` and `G_{val}`.
-
-5. **Create Noise**
+2. **Create Noise**
    - Generates ABox noise in an ontology: random, statistical and logical contradictions.
 
    **Outputs:**  
@@ -149,36 +140,21 @@ For each ontology, two additional versions are provided:
    - **0.75:** 75% of the original triples are modified/added as noise.
    - **1.00:** 100% of the original triples are modified/added as noise.
 
-**Running Specific Steps of the Pipeline:**
-
-You can execute individual steps of the pipeline by specifying the  `--steps` option. Available steps are:
-
-`graphs`, `reasoner`, `filter`, `split`, `noise`, `all`
-
-Examples:
-
-```bash
-# Run only the 'graphs' step on the 'family' dataset
-
-python pipeline_noise.py --dataset_name family --steps graphs
-
-# Run only the 'split' step on the 'OWL2DL-1' dataset
-
-python pipeline_noise.py --dataset_name OWL2DL-1 --steps split
-```
-
 ### To Run NeuroSymbolic Reasoners
 
 ```bash
 python pipeline_reasoner.py --dataset_name family --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name family --reasoner box2el
 python pipeline_reasoner.py --dataset_name family --reasoner rgcn
+
 python pipeline_reasoner.py --dataset_name pizza_100 --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name pizza_100 --reasoner box2el
 python pipeline_reasoner.py --dataset_name pizza_100 --reasoner rgcn
-python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner owl2vec
-python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner box2el
-python pipeline_reasoner.py --dataset_name pizza_1000 --reasoner rgcn
+
+python pipeline_reasoner.py --dataset_name pizza_250 --reasoner owl2vec
+python pipeline_reasoner.py --dataset_name pizza_250 --reasoner box2el
+python pipeline_reasoner.py --dataset_name pizza_250 --reasoner rgcn
+
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner owl2vec
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner box2el
 python pipeline_reasoner.py --dataset_name OWL2DL-1 --reasoner rgcn

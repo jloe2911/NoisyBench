@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 from src.gnn import get_data
-from src.noise import train_gnn, get_disjoint_classes, get_disjoint_properties, add_triples_random, add_triples_gnn, add_triples_logical
+from src.noise import train_gnn, get_disjoint_classes, get_disjoint_properties, build_domain_range_maps, add_triples_random, add_triples_gnn, add_triples_logical
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'  # Override for consistency
@@ -16,11 +16,7 @@ device = 'cpu'  # Override for consistency
 def load_graphs(dataset_name: str):
     g = rdflib.Graph()
     g.parse(f'datasets/{dataset_name}_test.owl', format='xml')
-
-    g_modified = rdflib.Graph()
-    g_modified.parse(f'ontologies/{dataset_name}_modified.owl', format='turtle')  # modified TBOX
-    
-    return g, g_modified
+    return g
 
 # ---------- RDF/XML Fix Utilities ----------
 
@@ -132,7 +128,7 @@ def sanitize_ontology(graph: rdflib.Graph, base_uri="http://example.com/genid/")
 # ---------- Main Noise Pipeline ----------
 
 def add_noise_to_dataset(dataset_name: str, experiments: dict):
-    g, g_modified = load_graphs(dataset_name)
+    g = load_graphs(dataset_name)
 
     nodes, nodes_dict, relations, relations_dict = get_data(g)[1:]
     nodes_dict_rev = {v: k for k, v in nodes_dict.items()}
@@ -144,14 +140,15 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
     torch.save(model, f'models/RGCN_{dataset_name}')
 
     # DL Noise
-    all_disjoint_classes = get_disjoint_classes(g_modified)
-    all_disjoint_properties = get_disjoint_properties(g_modified)
+    all_disjoint_classes = get_disjoint_classes(g)
+    all_disjoint_properties = get_disjoint_properties(g)
+    domain_map, range_map = build_domain_range_maps(g)
 
     os.makedirs("datasets/noise", exist_ok=True)
 
     for noise_percentage in [0.25, 0.5, 0.75, 1]:
         # Random
-        g, g_modified = load_graphs(dataset_name)
+        g = load_graphs(dataset_name)
         noisy_r, new_noisy_r = add_triples_random(g, noise_percentage)
         noisy_r = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_r))
         noisy_r = fix_malformed_disjoint_classes(noisy_r)
@@ -164,7 +161,7 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
         logging.info(f"DONE - Random Noise - {noise_percentage}")
 
         # GNN
-        g, g_modified = load_graphs(dataset_name)
+        g = load_graphs(dataset_name)
         model = torch.load(f'models/RGCN_{dataset_name}', weights_only=False)
         noisy_g, new_noisy_g = add_triples_gnn(model, g, data, nodes_dict_rev, relations_dict_rev, device, noise_percentage)
         noisy_g = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_g))
@@ -178,8 +175,8 @@ def add_noise_to_dataset(dataset_name: str, experiments: dict):
         logging.info(f"DONE - Statistical Noise - {noise_percentage}")
 
         # Logical
-        g, g_modified = load_graphs(dataset_name)
-        noisy_dl, new_noisy_dl = add_triples_logical(g, noise_percentage, all_disjoint_classes, all_disjoint_properties)
+        g = load_graphs(dataset_name)
+        noisy_dl, new_noisy_dl = add_triples_logical(g, noise_percentage, all_disjoint_classes, all_disjoint_properties, domain_map, range_map)
         noisy_dl = fix_blank_nodes_for_rdfxml(fix_literals_for_rdfxml(noisy_dl))
         noisy_dl = fix_malformed_disjoint_classes(noisy_dl)
         noisy_dl = sanitize_ontology(noisy_dl) 

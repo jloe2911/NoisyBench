@@ -175,7 +175,7 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-draft
 datasets
 models
 Pellet/temp
+notes.txt

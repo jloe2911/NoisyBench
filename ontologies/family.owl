@@ -92,6 +92,7 @@
 
     <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#hasAncestor">
         <rdfs:subPropertyOf rdf:resource="http://www.example.com/genealogy.owl#hasRelation"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <owl:inverseOf rdf:resource="http://www.example.com/genealogy.owl#isAncestorOf"/>
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#TransitiveProperty"/>
     </owl:ObjectProperty>
@@ -102,6 +103,7 @@
 
     <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#hasBrother">
         <owl:inverseOf rdf:resource="http://www.example.com/genealogy.owl#isBrotherOf"/>
+        <owl:propertyDisjointWith rdf:resource="http://www.example.com/genealogy.owl#isChildOf"/>
     </owl:ObjectProperty>
     
 
@@ -274,6 +276,7 @@
 
     <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#isBloodrelationOf">
         <rdfs:subPropertyOf rdf:resource="http://www.example.com/genealogy.owl#hasRelation"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
     </owl:ObjectProperty>
     
 
@@ -304,7 +307,9 @@
 
     <!-- http://www.example.com/genealogy.owl#isFatherOf -->
 
-    <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#isFatherOf"/>
+    <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#isFatherOf">
+        <rdfs:subPropertyOf rdf:resource="http://www.example.com/genealogy.owl#isParentOf"/>
+    </owl:ObjectProperty>
     
 
 
@@ -328,7 +333,9 @@
 
     <!-- http://www.example.com/genealogy.owl#isMotherOf -->
 
-    <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#isMotherOf"/>
+    <owl:ObjectProperty rdf:about="http://www.example.com/genealogy.owl#isMotherOf">
+        <rdfs:subPropertyOf rdf:resource="http://www.example.com/genealogy.owl#isParentOf"/>
+    </owl:ObjectProperty>
     
 
 
@@ -426,6 +433,8 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Marriage"/>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Sex"/>
     </owl:Class>
     
 
@@ -467,6 +476,8 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Marriage"/>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Woman"/>
     </owl:Class>
     
 
@@ -475,6 +486,9 @@
 
     <owl:Class rdf:about="http://www.example.com/genealogy.owl#Marriage">
         <rdfs:subClassOf rdf:resource="http://www.example.com/genealogy.owl#DomainEntity"/>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Person"/>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Sex"/>
+        <owl:disjointWith rdf:resource="http://www.example.com/genealogy.owl#Woman"/>
     </owl:Class>
     
 

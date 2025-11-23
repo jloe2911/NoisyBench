@@ -118,7 +118,9 @@ v1.4. Added Food class (used in domain/range of hasIngredient), Added several ha
 
     <!-- http://www.co-ode.org/ontologies/pizza/pizza.owl#hasCountryOfOrigin -->
 
-    <owl:ObjectProperty rdf:about="http://www.co-ode.org/ontologies/pizza/pizza.owl#hasCountryOfOrigin"/>
+    <owl:ObjectProperty rdf:about="http://www.co-ode.org/ontologies/pizza/pizza.owl#hasCountryOfOrigin">
+        <owl:propertyDisjointWith rdf:resource="http://www.co-ode.org/ontologies/pizza/pizza.owl#hasSpiciness"/>
+    </owl:ObjectProperty>
     
 
 

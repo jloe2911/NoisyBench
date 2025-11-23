@@ -452,10 +452,17 @@ def test_gnn_reasoner(dataset_name, model, data, rel2id, device):
 
 
 def run_rgcn(device, experiments):
-    os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
+    os.makedirs('models/results/rgcn_reasoner/', exist_ok=True)
+
     for experiment in experiments:
         dataset_name = experiment['dataset_name']
         file_name = experiment['file_name']
+        result_file_path = f'models/results/rgcn_reasoner/{file_name}.txt'
+
+        # Skip experiment if results file already exists
+        if os.path.exists(result_file_path):
+            logger.info(f"Skipping {file_name} because results already exist at {result_file_path}")
+            continue
 
         subsumption_results = []
         membership_results = []
@@ -473,23 +480,4 @@ def run_rgcn(device, experiments):
             membership_results.append(metrics_membership)
             link_prediction_results.append(metrics_link_prediction)
 
-        save_results(subsumption_results, membership_results, link_prediction_results,
-                     f'models/results/rgcn_reasoner/{file_name}.txt')
-
-
-def run_rgcn_test(device, experiments):
-    os.makedirs(f'models/results/rgcn_reasoner/', exist_ok=True)
-    for experiment in experiments:
-        dataset_name = experiment['dataset_name']
-        file_name = experiment['file_name']
-
-        seed = 42
-        model, data, relations_dict_test = train_gnn_reasoner(dataset_name, file_name, device, seed, iteration=0, epochs=25)
-        logger.info(f'{file_name}:')
-        metrics_subsumption, metrics_membership, metrics_link_prediction = test_gnn_reasoner(
-            dataset_name, model, data, relations_dict_test, device
-        )
-
-        save_results([metrics_subsumption], [metrics_membership], [metrics_link_prediction],
-                     f'models/results/rgcn_reasoner/{file_name}_test.txt')
-        break
+        save_results(subsumption_results, membership_results, link_prediction_results, result_file_path)

@@ -163,161 +163,172 @@ def add_triples_gnn(model, g_no_noise, data, nodes_dict_rev, relations_dict_rev,
 
     return noisy_g_gnn, new_g_gnn
 
-def build_class_index(graph):
-    class_to_instances = defaultdict(set)
-    for s, _, o in graph.triples((None, rdflib.RDF.type, None)):
-        class_to_instances[o].add(s)
-    return class_to_instances
+def build_class_index(g):
+    """Return dict: class_uri -> set(instances)"""
+    ci = {}
+    for s, p, o in g.triples((None, RDF.type, None)):
+        ci.setdefault(o, set()).add(s)
+    return ci
 
-def build_object_class_map(graph):
-    obj_classes = defaultdict(set)
-    for s, _, o in graph.triples((None, rdflib.RDF.type, None)):
-        obj_classes[s].add(o)
-    return obj_classes
+def build_domain_range_maps(g):
+    domain_map = defaultdict(set)
+    range_map = defaultdict(set)
 
-def add_triples_logical(g_no_noise, noise_percentage, disjoint_classes, disjoint_properties):
-    max_triples = int(noise_percentage * len(g_no_noise))
+    for p, o in g.subject_objects(rdflib.RDFS.domain):
+        domain_map[p].add(o)
 
-    # Clean graph
+    for p, o in g.subject_objects(rdflib.RDFS.range):
+        range_map[p].add(o)
+
+    return dict(domain_map), dict(range_map)
+
+def add_triples_logical(
+        g_no_noise,
+        noise_percentage,
+        disjoint_classes,
+        disjoint_properties,
+        domain_map,
+        range_map
+):
+    """
+    Fast logical noise generator:
+    - disjoint class violations
+    - disjoint property violations
+    - domain violations
+    - range violations
+    - fake nodes if needed
+    """
+
+    # -------------------------------------------------------
+    # PREP
+    # -------------------------------------------------------
+    n_target = int(noise_percentage * len(g_no_noise))
+
+    # Clean original
     g_no_noise = remove_triples(g_no_noise)
-    
-    # Graphs
-    noisy_g_logical = rdflib.Graph()           # holds only corrupted triples
-    new_g_logical = copy_graph(g_no_noise)     # copy of the new graph
+    new_graph = copy_graph(g_no_noise)
+    noise_graph = rdflib.Graph()
 
-    triples_list = list(g_no_noise)
-    all_classes = set(g_no_noise.objects(None, rdflib.RDF.type))
+    triples = list(g_no_noise)
 
-    # Precompute
+    ## Pre-compute structures
     class_to_instances = build_class_index(g_no_noise)
-    obj_classes = build_object_class_map(g_no_noise)
-    alt_classes = {c: list(all_classes - {c}) for c in all_classes}
 
-    # Namespace for fake individuals
+    # Reverse index: instance → classes
+    inst_classes = defaultdict(set)
+    for cls, insts in class_to_instances.items():
+        for inst in insts:
+            inst_classes[inst].add(cls)
+
     EX = Namespace("http://example.org/fake/")
 
     # -------------------------------------------------------
-    # STEP 1 — Build all logically valid corruptions
+    # FAST HELPERS
     # -------------------------------------------------------
-    logical_candidates = set()
-
-    for s, p, o in triples_list:
-
-        # --- TYPE corruption ---
-        if p == rdflib.RDF.type:
-            if o in disjoint_classes:
-                for dc in disjoint_classes[o]:
-                    logical_candidates.add((s, p, dc))
-            else:
-                for alt in alt_classes[o]:
-                    logical_candidates.add((s, p, alt))
-
-        # --- PROPERTY corruption ---
-        elif p in disjoint_properties:
-            for dp in disjoint_properties[p]:
-                logical_candidates.add((s, dp, o))
-
-        # --- OBJECT corruption ---
-        else:
-            for c in obj_classes.get(o, []):
-                if c in disjoint_classes:
-                    for new_c in disjoint_classes[c]:
-                        for inst in class_to_instances.get(new_c, []):
-                            logical_candidates.add((s, p, inst))
-
-    # Remove triples already in graph
-    logical_candidates = [t for t in logical_candidates if t not in g_no_noise]
-
-    # Shuffle for randomness
-    random.shuffle(logical_candidates)
-
-    # How many do we have?
-    num_logical = len(logical_candidates)
+    def violating_instance(target_class):
+        """Return an existing instance of a class incompatible with target_class."""
+        if target_class in disjoint_classes:
+            possible = []
+            for dc in disjoint_classes[target_class]:
+                possible.extend(class_to_instances.get(dc, []))
+            return random.choice(possible) if possible else None
+        return None
 
     # -------------------------------------------------------
-    # STEP 2 — Use as many logical corruptions as possible
+    # STEP 1 – Generate violations on the fly (FAST)
     # -------------------------------------------------------
     selected = []
 
-    if num_logical >= max_triples:
-        selected = logical_candidates[:max_triples]
+    for s, p, o in triples:
 
+        # --- TYPE (rdf:type) → DISJOINT CLASS VIOLATION ---
+        if p == rdflib.RDF.type:
+            cls = o
+            if cls in disjoint_classes and disjoint_classes[cls]:
+                bad_cls = random.choice(disjoint_classes[cls])
+                selected.append((s, rdflib.RDF.type, bad_cls))
+        
+        # --- PROPERTY → DISJOINT PROPERTY VIOLATION ---
+        elif p in disjoint_properties and disjoint_properties[p]:
+            bad_prop = random.choice(disjoint_properties[p])
+            selected.append((s, bad_prop, o))
+        
+        # --- DOMAIN VIOLATION ---
+        elif p in domain_map:
+            expected_classes = domain_map[p]
+            # pick an instance violating domain
+            violating = None
+            for c in expected_classes:
+                violating = violating_instance(c)
+                if violating:
+                    break
+            if violating:
+                selected.append((violating, p, o))
+
+        # --- RANGE VIOLATION ---
+        elif p in range_map:
+            expected_classes = range_map[p]
+            violating = None
+            for c in expected_classes:
+                violating = violating_instance(c)
+                if violating:
+                    break
+            if violating:
+                selected.append((s, p, violating))
+
+    # Remove any triple already present
+    selected = [t for t in selected if t not in g_no_noise]
+
+    # Shuffle
+    random.shuffle(selected)
+
+    # -------------------------------------------------------
+    # STEP 2 – Trim or supplement with fake nodes
+    # -------------------------------------------------------
+    if len(selected) >= n_target:
+        selected = selected[:n_target]
     else:
-        # Use all available logical ones
-        selected = list(logical_candidates)
+        # Need more noise → add fake individuals
+        needed = n_target - len(selected)
 
-        # ---------------------------------------------------
-        # STEP 3 — Generate fake individuals for the rest
-        # ---------------------------------------------------
-        needed = max_triples - num_logical
-        fake_count_1 = 0
-        fake_count_2 = 1
-
+        fake_id = 0
         while needed > 0:
 
-            if random.choice([True, False]) and len(disjoint_classes) > 0:
-                # ----------------------------------
-                # Fake individuals + disjoint class
-                # ----------------------------------
-                dc = random.choice(list(disjoint_classes.keys()))
-                class_list = disjoint_classes[dc]
-                if not class_list:
-                    continue
-                chosen_dc = random.choice(class_list)
+            # randomly choose mode
+            mode = random.choice(["class", "prop"])
 
-                fake_ind_1 = EX[f"Fake{fake_count_1}"]
-                fake_ind_2 = EX[f"Fake{fake_count_2}"]
-                fake_count_1 += 2
-                fake_count_2 += 2
+            # --- Fake disjoint class noise ---
+            if mode == "class" and len(disjoint_classes) > 0:
+                base = random.choice(list(disjoint_classes.keys()))
+                options = disjoint_classes[base]
+                if options:
+                    cls = random.choice(options)
+                    fake = EX[f"Fake{fake_id}"]
+                    fake_id += 1
+                    t = (fake, rdflib.RDF.type, cls)
+                    if t not in g_no_noise:
+                        selected.append(t)
+                        needed -= 1
+                        continue
 
-                corrupted_1 = (fake_ind_1, rdflib.RDF.type, chosen_dc)
-                corrupted_2 = (fake_ind_2, rdflib.RDF.type, chosen_dc)
-
-                # Add if unique
-                if corrupted_1 not in selected and corrupted_1 not in g_no_noise:
-                    selected.append(corrupted_1)
-                    needed -= 1
-                    if needed == 0:
-                        break
-
-                if corrupted_2 not in selected and corrupted_2 not in g_no_noise:
-                    selected.append(corrupted_2)
-                    needed -= 1
-                    if needed == 0:
-                        break
-
-            else:
-                # ----------------------------------
-                # Fake individuals + disjoint property
-                # ----------------------------------
-                if len(disjoint_properties) == 0:
-                    continue
-
-                # Pick a random property group
-                base_prop = random.choice(list(disjoint_properties.keys()))
-                prop_list = disjoint_properties[base_prop]
-                if not prop_list:
-                    continue
-
-                chosen_prop = random.choice(prop_list)
-
-                fake_ind_1 = EX[f"Fake{fake_count_1}"]
-                fake_ind_2 = EX[f"Fake{fake_count_2}"]
-                fake_count_1 += 2
-                fake_count_2 += 2
-
-                # Build corrupted triple: fake1 -prop-> fake2
-                corrupted = (fake_ind_1, chosen_prop, fake_ind_2)
-
-                if corrupted not in selected and corrupted not in g_no_noise:
-                    selected.append(corrupted)
-                    needed -= 1
+            # --- Fake disjoint property noise ---
+            if mode == "prop" and len(disjoint_properties) > 0:
+                base = random.choice(list(disjoint_properties.keys()))
+                plist = disjoint_properties[base]
+                if plist:
+                    p2 = random.choice(plist)
+                    fake1 = EX[f"Fake{fake_id}"]; fake_id += 1
+                    fake2 = EX[f"Fake{fake_id}"]; fake_id += 1
+                    t = (fake1, p2, fake2)
+                    if t not in g_no_noise:
+                        selected.append(t)
+                        needed -= 1
 
     # -------------------------------------------------------
-    # STEP 4 — Add selected corruptions to output graphs
+    # STEP 3 – Add to graphs
     # -------------------------------------------------------
     for t in selected:
-        noisy_g_logical.add(t)
-        new_g_logical.add(t)
+        noise_graph.add(t)
+        new_graph.add(t)
 
-    return noisy_g_logical, new_g_logical
+    return noise_graph, new_graph
