@@ -6,6 +6,8 @@
 
 Using the **Pizza ontology**, we created an ABox generator to support experiments with synthetic data (`see ontologies/Abox-generation.ipynb`). The process for generating ABox data for the Pizza ontology begins by loading the Pizza TBox (Terminological Box) axioms. A custom instance generation step then automatically creates a specified number of individuals (ABox data), and their object properties based on a configuration. For this study, we use only `NamedPizza` class and `hasTopping` property in the configuration. Crucially, this generation leverages the TBox's inherent OWL restrictions (e.g.,`only` or `some` constraints) to dynamically determine the appropriate target classes for object properties, thereby guaranteeing the generated ABox is semantically consistent with the ontology's definition. The final output is the complete ontology, comprising the original TBox and the newly populated ABox.
 
+Similarly, for the **OWL2DL-1** ontology, we focus on the classes `University`, `Department`, `Person`, and `Course`, along with key object properties such as `hasDepartment`, `hasDoctoralDegreeFrom`, `teachesCourse`, and `takesCourse`.
+
 ---
 
 ## Features

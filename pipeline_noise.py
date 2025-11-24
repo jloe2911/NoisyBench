@@ -18,7 +18,7 @@ if __name__ == "__main__":
         type=str, 
         required=True, 
         help="Dataset name", 
-        choices=['pizza', 'pizza_100', 'pizza_250', 'family', 'OWL2DL-1_100']
+        choices=['pizza', 'pizza_100', 'pizza_250', 'family', 'OWL2DL-1']
     )
 
     # flags for each step
