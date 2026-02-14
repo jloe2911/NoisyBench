@@ -85,7 +85,7 @@ We use the `mowl` library to run the reasoners, which depend on Java. However, J
   - Windows: `C:\Program Files\Java\jdk-22`
   - Mac/Linux: `/usr/lib/jvm/java-22-openjdk`
 
-1. Set `JAVA_HOME`
+2. Set `JAVA_HOME`
 
 - The notebook relies on the `JAVA_HOME` environment variable.
 - In `consts.py`:
@@ -97,7 +97,7 @@ JAVA_HOME_PATH = r"C:\Program Files\Java\jdk-25"  # <-- Change this if needed
 os.environ["JAVA_HOME"] = JAVA_HOME_PATH
 ```
 
-1. Initialize JVM Memory
+3. Initialize JVM Memory
 
 - `mowl` runs on the Java Virtual Machine (JVM). You need to allocate memory:
 
