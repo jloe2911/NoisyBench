@@ -40,23 +40,38 @@ cd noisybench
 **Install dependencies within virtual environment**
 
 ```bash
-# Create a virtual environment named 'env'
-
+# 1. Create a virtual environment
 python -m venv env
 
-# Activate the environment
-
-# On macOS/Linux
-
+# 2. Activate the environment
+# macOS/Linux
 source env/bin/activate
-
-# On Windows
-
+# Windows (PowerShell)
 env\Scripts\activate
+# Windows (cmd)
+env\Scripts\activate.bat
 
-# Install dependencies inside the environment
+# 3. Upgrade pip, setuptools, wheel
+pip install --upgrade pip setuptools wheel
 
+# 4. Install all other dependencies
 pip install -r requirements.txt
+
+# 5. Install PyTorch and PyTorch Geometric
+# CPU-only installation (works on Windows, Linux, macOS)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Then install PyTorch Geometric packages using prebuilt wheels
+pip install torch-scatter -f https://data.pyg.org/whl/torch-2.2.0+cpu.html
+pip install torch-sparse -f https://data.pyg.org/whl/torch-2.2.0+cpu.html
+pip install torch-geometric
+
+# GPU installation (requires compatible NVIDIA GPU + CUDA)
+# Uncomment and adjust CUDA version if you want GPU support
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# pip install torch-scatter -f https://data.pyg.org/whl/torch-2.2.0+cu118.html
+# pip install torch-sparse -f https://data.pyg.org/whl/torch-2.2.0+cu118.html
+# pip install torch-geometric
 ```
 
 **Setting up Java**
@@ -70,7 +85,7 @@ We use the `mowl` library to run the reasoners, which depend on Java. However, J
   - Windows: `C:\Program Files\Java\jdk-22`
   - Mac/Linux: `/usr/lib/jvm/java-22-openjdk`
 
-2. Set `JAVA_HOME`
+1. Set `JAVA_HOME`
 
 - The notebook relies on the `JAVA_HOME` environment variable.
 - In `consts.py`:
@@ -82,7 +97,7 @@ JAVA_HOME_PATH = r"C:\Program Files\Java\jdk-25"  # <-- Change this if needed
 os.environ["JAVA_HOME"] = JAVA_HOME_PATH
 ```
 
-3. Initialize JVM Memory
+1. Initialize JVM Memory
 
 - `mowl` runs on the Java Virtual Machine (JVM). You need to allocate memory:
 
